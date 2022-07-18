@@ -20,12 +20,12 @@ Some binary targets may require some sanitizing (ie. signature matching, or iden
 __fuzzable__ primarily uses Binary Ninja as a disassembly backend because of it's ability to effectively solve these problems.
 Therefore, it can be utilized both as a standalone tool and plugin.
 
-Since Binary Ninja isn't accessible to all and there may be a demand to utilize this in the cloud at scale, a [falcon](https://github.com/falconre/falcon)
+Since Binary Ninja isn't accessible to all and there may be a demand to utilize this in the cloud at scale, an [angr](https://github.com/angr/angr)
 _fallback_ backend is also supported. I anticipate to incorporate other disassemblers down the road as well.
 
 ### Command Line (Standalone)
 
-If you have Binary Ninja Commercial, be sure
+If you have Binary Ninja Commercial, be sure to install the API for standalone headless usage:
 
 ```
 $ python3 /Applications/Binary\ Ninja.app/Contents/Resources/scripts/install_api.py
@@ -35,6 +35,16 @@ Now install `fuzzable` with `pip`:
 
 ```
 $ pip install fuzzable
+```
+
+You can now analyze binaries and/or source code with the tool!
+
+```
+$ fuzzable analyze examples/binaries/libsimple.so.1
+
+$ fuzzable analyze examples/source/libsimple.c
+
+$ fuzzable analyze examples/source/source_bundle/
 ```
 
 ### Binary Ninja Plugin
@@ -68,4 +78,4 @@ Ignore including functions that are stripped as part of the final results.
 
 ## License
 
-[MIT License](https://codemuch.tech/license.txt)
+Fuzzable is licensed under the [MIT License](https://codemuch.tech/license.txt).

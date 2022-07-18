@@ -138,16 +138,18 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         symbol = func.symbol.type
         log.log_debug(f"{name} - {symbol}")
 
+        """
         # ignore imported functions from other libraries, ie glibc or win32api
         if symbol in [
             SymbolType.ImportedFunctionSymbol,
             SymbolType.LibraryFunctionSymbol,
-            SymbolType.ExternalSymbol,
             SymbolType.ImportAddressSymbol,
+            SymbolType.ImportedFunctionSymbol,
             SymbolType.ImportedDataSymbol,
         ]:
             log.log_debug(f"{name} is an import, skipping")
             return True
+        """
 
         # ignore targets with patterns that denote some type of profiling instrumentation, ie stack canary
         if name.startswith("__"):
@@ -249,7 +251,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
     def get_cyclomatic_complexity(self, func: Function) -> int:
         num_blocks = len(func.basic_blocks)
         num_edges = sum([len(b.outgoing_edges) for b in func.basic_blocks])
-        return num_blocks - num_edges + 2
+        return num_edges - num_blocks + 2
 
 
 def run_fuzzable_recommend(view) -> None:

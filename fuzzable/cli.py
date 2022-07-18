@@ -6,6 +6,7 @@ cli.py
 import sys
 import typer
 
+from rich import print
 from rich.console import Console
 from rich.table import Table
 
@@ -37,14 +38,13 @@ def error(string: str) -> None:
         string,
         fg=typer.colors.RED,
     )
-    typer.echo(f"{ERROR_START} {exception}")
+    print(f"{ERROR_START} {exception}")
     sys.exit(1)
 
 
-def print_table(target: Path, fuzzability: Fuzzability) -> None:
+def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
     print("\n")
     table = Table(title=f"Fuzzable Report for Target `{target}`")
-
     for column in COLUMNS:
         table.add_column(column, style="magenta")
 
@@ -61,3 +61,8 @@ def print_table(target: Path, fuzzability: Fuzzability) -> None:
 
     console = Console()
     console.print(table)
+
+    print("\n[bold red]ADDITIONAL METADATA[/bold red]\n")
+    print(f"[underline]Number of Symbols Analyzed[/underline]: \t\t{len(fuzzability)}")
+    print(f"[underline]Number of Symbols Skipped[/underline]: \t\t{skipped}")
+    print(f"[underline]Top Fuzzing Contender[/underline]: \t\t{fuzzability[0].name}\n")

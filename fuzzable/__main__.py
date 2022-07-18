@@ -9,9 +9,10 @@ import typing as t
 import typer
 import lief
 import logging
-from rich.logging import RichHandler
 
 from rich import print
+from rich.logging import RichHandler
+
 from fuzzable import generate
 from fuzzable.config import SOURCE_FILE_EXTS
 from fuzzable.cli import print_table, error
@@ -25,7 +26,7 @@ FORMAT = "%(message)s"
 logging.basicConfig(
     level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
 )
-log = logging.getLogger("fuzzable")
+log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
@@ -46,10 +47,19 @@ def analyze(
         None,
         help="Export the analysis as a CSV to a path (default is `temp.csv`).",
     ),
+    debug: bool = typer.Option(
+        False,
+        help="If set, will turn on debug logs.",
+    )
 ):
     """
     Run fuzzable analysis on a single or workspace of C/C++ source files, or a binary.
     """
+
+    # TODO: set different levels?
+    if debug:
+        log.setLevel(logging.DEBUG)
+
     try:
         mode = AnalysisMode[mode.upper()]
     except Exception:
@@ -97,7 +107,8 @@ def run_on_file(target: Path, mode: AnalysisMode, out_csv: t.Optional[Path]) -> 
                 )
 
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
-    print_table(target, analyzer.run())
+    results = analyzer.run()
+    print_table(target, results, analyzer.skipped)
 
 
 def run_on_workspace(
@@ -110,7 +121,7 @@ def run_on_workspace(
     source_files = []
     for subdir, _, files in os.walk(target):
         for file in files:
-            if Path(file).suffix in SOURCE_FILE_EXTS:
+            if Path(file).suffix in SOURCE_FILE_EXTS and "test" not in file:
                 log.info(f"Adding {file} to set of source code to analyze")
                 source_files += [Path(os.path.join(subdir, file))]
 
@@ -121,7 +132,8 @@ def run_on_workspace(
 
     analyzer = AstAnalysis(source_files, mode)
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
-    print_table(target, analyzer.run())
+    results = analyzer.run()
+    print_table(target, results, analyzer.skipped)
 
 
 @app.command()

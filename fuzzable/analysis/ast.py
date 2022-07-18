@@ -5,7 +5,9 @@ ast.py
 
 """
 import typing as t
+import logging
 
+from rich.logging import RichHandler
 from tree_sitter import Language, Node, Parser
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
@@ -13,12 +15,21 @@ from ..metrics import CallScore
 
 BUILD_PATH = "build/lang.so"
 
+FORMAT = "%(message)s"
+logging.basicConfig(
+    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
+)
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+
 
 class AstAnalysis(AnalysisBackend):
     """Derived class to support parsing C/C++ ASTs with pycparser"""
 
     def __init__(self, target: t.List[str], mode: AnalysisMode):
         super().__init__(target, mode)
+
+        log.debug("Building third-party tree-sitter libraries for C/C++ languages")
         Language.build_library(
             BUILD_PATH,
             ["third_party/tree-sitter-c", "third_party/tree-sitter-cpp"],
@@ -28,6 +39,9 @@ class AstAnalysis(AnalysisBackend):
 
         # store mapping between filenames and their raw contents and function AST node
         self.parsed_symbols: t.Dict[str, t.Tuple[Node, bytes]] = {}
+
+        # cache if top level call
+        self.is_top_level: bool = False
 
     def __str__(self) -> str:
         return "tree-sitter"
@@ -53,6 +67,7 @@ class AstAnalysis(AnalysisBackend):
             tree = self.parser.parse(contents)
             # print(tree.root_node.sexp())
 
+            log.debug(f"{filename} - grabing function definitions")
             query = self.language.query(
                 """
             (function_definition) @capture
@@ -64,21 +79,26 @@ class AstAnalysis(AnalysisBackend):
             self.parsed_symbols[str(filename)] = (captures, contents)
 
         # now analyze each function_definition node
+        log.debug(f"{filename} - iterating over symbols in all files")
         for filename, entry in self.parsed_symbols.items():
             nodes = entry[0]
             contents = entry[1]
             for node in nodes:
+
+                log.debug(f"{filename} - checking if we should skip analysis for node")
                 if self.skip_analysis(node):
                     self.skipped += 1
+                    log.debug(f"{filename} - skipping over this one")
                     continue
 
                 # if recommend mode, filter and run only those that are top-level
-                if self.mode == AnalysisMode.RECOMMEND and not self.is_toplevel_call(
-                    node
-                ):
+                self.is_top_level = self.is_toplevel_call(node)
+                if self.mode == AnalysisMode.RECOMMEND and not self.is_top_level:
+                    log.debug(f"{filename} - skipping over node, since it's not top-level for recommended mode")
                     continue
 
                 # get function name from the node
+                log.debug(f"{filename} - attempting to capture function symbol name for the current node AST")
                 query = self.language.query(
                     """
                 (identifier) @capture
@@ -86,10 +106,16 @@ class AstAnalysis(AnalysisBackend):
                 )
 
                 # TODO make this query better, match more specifically
-                identifier = query.captures(node)[0][0]
-                name = contents[identifier.start_byte : identifier.end_byte].decode(
-                    "utf8"
-                )
+                try:
+                    identifier = query.captures(node)[0][0]
+                    name = contents[identifier.start_byte : identifier.end_byte].decode(
+                        "utf8"
+                    )
+                except Exception as err:
+                    log.warning(f"{filename} - parsing failed for {node}, reason: {err}")
+                    continue
+
+                log.debug(f"{filename} - analyzing function target {name}")
                 self.scores += [self.analyze_call(name, node, contents)]
 
         return super()._rank_fuzzability(self.scores)
@@ -97,7 +123,7 @@ class AstAnalysis(AnalysisBackend):
     def analyze_call(self, name: str, func: Node, contents: bytes) -> CallScore:
         return CallScore(
             name=name,
-            toplevel=self.is_toplevel_call(name),
+            toplevel=self.is_top_level,
             fuzz_friendly=self.is_fuzz_friendly(name),
             risky_sinks=self.risky_sinks(func, contents),
             natural_loops=self.natural_loops(func),
@@ -121,6 +147,7 @@ class AstAnalysis(AnalysisBackend):
 
         TODO: can this be more performant and pythonic?
         """
+        log.debug(f"{target} - checking if toplevel call")
 
         # get call_expressions for each function name
         for _, entry in self.parsed_symbols.items():
@@ -153,6 +180,7 @@ class AstAnalysis(AnalysisBackend):
         TODO: this dataflow analysis is quite rudimentary and doesn't account
         for reassignments
         """
+        log.debug(f"Checking for risky sinks")
 
         # number of times an argument flows into a risky call
         instances = 0
@@ -176,6 +204,7 @@ class AstAnalysis(AnalysisBackend):
         try:
             params = [p.split(" ")[1].replace("*", "") for p in params]
         except IndexError:
+            log.warning(f"{func} - cannot get risky sinks because fuzzable cannot parse the parameters")
             return instances
 
         # TODO: should we add a configuration knob that supports just checking
@@ -221,6 +250,7 @@ class AstAnalysis(AnalysisBackend):
         """
         TODO: make this traverse
         """
+        log.debug(f"{func} - getting callgraph depth")
         call_query = self.language.query(
             """
         (call_expression) @capture
@@ -229,6 +259,7 @@ class AstAnalysis(AnalysisBackend):
         return len([n for (n, _) in call_query.captures(func)])
 
     def natural_loops(self, func: Node) -> int:
+        log.debug(f"{func} - getting number of natural loops")
         looping_nodes = [
             "do_statement",
             "for_range_loop",
@@ -241,6 +272,7 @@ class AstAnalysis(AnalysisBackend):
         """
         M = E − N + 2P
         """
+        log.debug(f"{func} - getting cyclomatic complexity")
         branching_nodes = [
             "if_statement",
             "case_statement",
