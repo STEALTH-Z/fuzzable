@@ -78,7 +78,7 @@ class AngrAnalysis(AnalysisBackend):
         if func.is_plt or func.is_syscall:
             return True
 
-        # TODO: 
+        # TODO:
         if name in ["_init", "frame_dummy", "call_weak_fn", "$x", "_fini"]:
             return True
 

@@ -94,11 +94,15 @@ class AstAnalysis(AnalysisBackend):
                 # if recommend mode, filter and run only those that are top-level
                 self.is_top_level = self.is_toplevel_call(node)
                 if self.mode == AnalysisMode.RECOMMEND and not self.is_top_level:
-                    log.debug(f"{filename} - skipping over node, since it's not top-level for recommended mode")
+                    log.debug(
+                        f"{filename} - skipping over node, since it's not top-level for recommended mode"
+                    )
                     continue
 
                 # get function name from the node
-                log.debug(f"{filename} - attempting to capture function symbol name for the current node AST")
+                log.debug(
+                    f"{filename} - attempting to capture function symbol name for the current node AST"
+                )
                 query = self.language.query(
                     """
                 (identifier) @capture
@@ -112,7 +116,9 @@ class AstAnalysis(AnalysisBackend):
                         "utf8"
                     )
                 except Exception as err:
-                    log.warning(f"{filename} - parsing failed for {node}, reason: {err}")
+                    log.warning(
+                        f"{filename} - parsing failed for {node}, reason: {err}"
+                    )
                     continue
 
                 log.debug(f"{filename} - analyzing function target {name}")
@@ -204,7 +210,9 @@ class AstAnalysis(AnalysisBackend):
         try:
             params = [p.split(" ")[1].replace("*", "") for p in params]
         except IndexError:
-            log.warning(f"{func} - cannot get risky sinks because fuzzable cannot parse the parameters")
+            log.warning(
+                f"{func} - cannot get risky sinks because fuzzable cannot parse the parameters"
+            )
             return instances
 
         # TODO: should we add a configuration knob that supports just checking

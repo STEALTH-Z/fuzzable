@@ -21,9 +21,8 @@ INTERESTING_PATTERNS: t.List[str] = [
     # Decryption Routines
     "encode",
     "decode",
-
     "create",
-    "init"
+    "init",
 ]
 
 # TODO: dataset of risky function calls

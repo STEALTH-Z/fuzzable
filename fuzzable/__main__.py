@@ -50,7 +50,7 @@ def analyze(
     debug: bool = typer.Option(
         False,
         help="If set, will turn on debug logs.",
-    )
+    ),
 ):
     """
     Run fuzzable analysis on a single or workspace of C/C++ source files, or a binary.
