@@ -3,6 +3,7 @@ generate.py
 
     Creates template harnesses for a given target.
 """
+import os
 import typing as t
 
 import lief
@@ -37,26 +38,29 @@ def transform_elf_to_so(
 
 
 def generate_harness(
-    target: Path, output: t.Optional[Path], file_fuzzing: bool, libfuzzer: bool
+    target_name: str,
+    function_name: str,
+    return_type: str,
+    params: t.List[str],
+    harness_path: t.Optional[str] = str,
+    output: t.Optional[str] = None,
 ) -> None:
     """ """
-    template_type = None
+    template_path = Path("templates" / "linux_closed_source_harness.cpp")
+    if harness_path:
+        template_path = harness_path
 
-    with open(Path("templates" / "linux_closed_source_harness.cpp"), "r") as fd:
+    with open(template_path, "r") as fd:
         template = fd.read()
 
-    template = template.replace("{NAME}", target)
-    template = template.replace("{binary}", target)
-    template = template.replace("{type_arg}", target)
+    template = template.replace("{NAME}", os.path.basename(target_name))
+    template = template.replace("{function_name}", function_name)
+    template = template.replace("{return_type}", return_type)
+    template = template.replace("{type_args}", params)
 
-    # set a FILE_FUZZING
-    if file_fuzzing:
-        pass
-    if libfuzzer:
-        pass
+    harness = f"{target_name}_{function_name}_harness.cpp"
+    if output is not None:
+        harness = output
 
-    if output is None:
-        output = target + "_harness.cc"
-
-    with open(output) as fd:
+    with open(harness) as fd:
         fd.write(template)

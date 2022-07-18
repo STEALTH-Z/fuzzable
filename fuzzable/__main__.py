@@ -140,7 +140,8 @@ def run_on_workspace(
 def create_harness(
     target: Path,
     symbol_name: t.List[str] = typer.Option(
-        [], help="Names of function symbol to create a fuzzing harness to target."
+        [],
+        help="Names of function symbol to create a fuzzing harness to target. Source not supported yet.",
     ),
     out_so_name: str = typer.Option(
         "", help="Specify to set output `.so` of a transformed ELF binary."
@@ -159,12 +160,12 @@ def create_harness(
     # if a binary, check if executable or library. if executable, use LIEF to
     # copy, export the symbol and transform to shared object.
     binary = lief.parse(target)
-    if binary is not None:
-        output = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
+    if binary is None:
+        error("Does not support synthesizing harnesses for C/C++ source code yet.")
 
-    # if source code, use the generic library
-    generate.generate_harness(target, file_fuzzing, libfuzzer)
-    print(target, symbol_name)
+    log.info("Running harness generation for `{target}` on symbol `{symbol_name}`.")
+    output = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
+    generate.generate_harness(target)
 
 
 # TOOD list-functions

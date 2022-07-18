@@ -24,6 +24,7 @@ from binaryninja.plugin import BackgroundTaskThread
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
 from ..cli import COLUMNS
+from ..generate import generate_harness
 
 
 class _BinjaAnalysisMeta(type(AnalysisBackend), type(BackgroundTaskThread)):
