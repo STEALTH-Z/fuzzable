@@ -31,14 +31,17 @@ def transform_elf_to_so(
     for sym in exports:
         addr = lib.get_function_address(sym)
         lib.add_ex
-    
+
     path = str(path) + "_exported.so"
     if override_path:
         path = str(override_path)
 
-    log.info("Transforming the ELF binary into a shared object for harness genaration at {path}")
+    log.info(
+        "Transforming the ELF binary into a shared object for harness genaration at {path}"
+    )
     lib.write(path)
     return Path(path)
+
 
 def generate_harness(
     target_name: str,

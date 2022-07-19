@@ -161,14 +161,17 @@ def create_harness(
     # copy, export the symbol and transform to shared object.
     binary = lief.parse(target)
     if binary is None:
-        error("Wrong filetype, or does not support synthesizing harnesses for C/C++ source code yet.")
+        error(
+            "Wrong filetype, or does not support synthesizing harnesses for C/C++ source code yet."
+        )
 
     target = Path(target)
     log.info(f"Running harness generation for `{target}` on symbol `{symbol_name}`.")
     shared_obj = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
-    
+
     generate.generate_harness(shared_obj, symbol_name, harness_path=out_harness)
     log.info("Done!")
+
 
 # TOOD list-functions
 # TODO generate-callgraph

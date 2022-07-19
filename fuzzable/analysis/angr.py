@@ -139,7 +139,7 @@ class AngrAnalysis(AnalysisBackend):
         df = self.target.analyses.DominanceFrontier(func)
         if df.frontiers:
             return len(df.frontiers)
-        
+
         return 0
 
     def get_cyclomatic_complexity(self, func: Function) -> int:
