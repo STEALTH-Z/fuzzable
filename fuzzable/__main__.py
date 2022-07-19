@@ -133,13 +133,16 @@ def run_on_workspace(
 
 @app.command()
 def create_harness(
-    target: Path,
-    symbol_name: t.List[str] = typer.Option(
-        [],
+    target: str,
+    symbol_name: str = typer.Option(
+        "",
         help="Names of function symbol to create a fuzzing harness to target. Source not supported yet.",
     ),
-    out_so_name: str = typer.Option(
-        "", help="Specify to set output `.so` of a transformed ELF binary."
+    out_so_name: t.Optional[str] = typer.Option(
+        None, help="Specify to set output `.so` path of a transformed ELF binary."
+    ),
+    out_harness: t.Optional[str] = typer.Option(
+        None, help="Specify to set output harness template file path."
     ),
     file_fuzzing: bool = typer.Option(
         False,
@@ -150,18 +153,22 @@ def create_harness(
         help="If enabled, will set the flag that compiles the harness as a libFuzzer harness instead of for AFL.",
     ),
 ):
-    """Synthesize a AFL++/libFuzzer harness for a given symbol in a target."""
+    """Synthesize a AFL++/libFuzzer harness for a given symbol in a binary target (TODO: source)."""
+    if not symbol_name:
+        error("No --symbol_name specified.")
 
     # if a binary, check if executable or library. if executable, use LIEF to
     # copy, export the symbol and transform to shared object.
     binary = lief.parse(target)
     if binary is None:
-        error("Does not support synthesizing harnesses for C/C++ source code yet.")
+        error("Wrong filetype, or does not support synthesizing harnesses for C/C++ source code yet.")
 
-    log.info("Running harness generation for `{target}` on symbol `{symbol_name}`.")
-    output = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
-    generate.generate_harness(target)
-
+    target = Path(target)
+    log.info(f"Running harness generation for `{target}` on symbol `{symbol_name}`.")
+    shared_obj = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
+    
+    generate.generate_harness(shared_obj, symbol_name, harness_path=out_harness)
+    log.info("Done!")
 
 # TOOD list-functions
 # TODO generate-callgraph

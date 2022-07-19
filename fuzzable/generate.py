@@ -11,10 +11,12 @@ from lief import ELF
 
 from pathlib import Path
 
+from .log import log
+
 
 def transform_elf_to_so(
-    path: Path, lib: lief.Binary, exports: t.List[str], override_path: t.Optional[str]
-) -> t.Optional[str]:
+    path: Path, lib: lief.Binary, exports: t.List[str], override_path: t.Optional[Path]
+) -> t.Optional[Path]:
     """
     Uses LIEF to check if an ELF executable can be transformed into a shared object with exported
     symbols for fuzzing.
@@ -22,45 +24,53 @@ def transform_elf_to_so(
 
     # check if shared object or PIE binary
     # TODO: stronger checks for shared object
-    if lib.header.file_type is not ELF.E_TYPE.DYNAMIC and not ".so" in path.suffix:
-        return None
+    if lib.header.file_type is not ELF.E_TYPE.DYNAMIC and ".so" in path.suffix:
+        log.info("No need to transform binary into a shared object")
+        return path
 
     for sym in exports:
-        addr = lief.get_function_address(sym)
-        lib.add_exported_function(addr, sym)
+        addr = lib.get_function_address(sym)
+        lib.add_ex
+    
+    path = str(path) + "_exported.so"
+    if override_path:
+        path = str(override_path)
 
-    if not override_path:
-        lib.write(path + "_exported.so")
-    else:
-        lib.write(override_path)
-
-    return path + "_exported.so"
-
+    log.info("Transforming the ELF binary into a shared object for harness genaration at {path}")
+    lib.write(path)
+    return Path(path)
 
 def generate_harness(
     target_name: str,
     function_name: str,
-    return_type: str,
-    params: t.List[str],
-    harness_path: t.Optional[str] = str,
+    return_type: t.Optional[str] = None,
+    params: t.List[str] = [],
+    harness_path: t.Optional[str] = None,
     output: t.Optional[str] = None,
 ) -> None:
     """ """
-    template_path = Path("templates" / "linux_closed_source_harness.cpp")
+    template_path = Path("templates") / "linux_closed_source_harness.cpp"
     if harness_path:
         template_path = harness_path
 
+    log.debug("Reading harness template")
     with open(template_path, "r") as fd:
         template = fd.read()
 
-    template = template.replace("{NAME}", os.path.basename(target_name))
+    log.debug("Replacing elements")
+    name = os.path.basename(target_name).split(".")[0]
+    template = template.replace("{NAME}", name)
     template = template.replace("{function_name}", function_name)
-    template = template.replace("{return_type}", return_type)
-    template = template.replace("{type_args}", params)
 
+    if return_type:
+        template = template.replace("{return_type}", return_type)
+    if len(params) != 0:
+        template = template.replace("{type_args}", params)
+
+    log.debug("Finalizing harness")
     harness = f"{target_name}_{function_name}_harness.cpp"
     if output is not None:
         harness = output
 
-    with open(harness) as fd:
+    with open(harness, "w") as fd:
         fd.write(template)

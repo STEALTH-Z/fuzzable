@@ -135,10 +135,11 @@ class AngrAnalysis(AnalysisBackend):
         return depth
 
     def natural_loops(self, func: Function) -> int:
-        """
-        TODO
-        """
         log.debug(f"{func.name} - getting natural loops")
+        df = self.target.analyses.DominanceFrontier(func)
+        if df.frontiers:
+            return len(df.frontiers)
+        
         return 0
 
     def get_cyclomatic_complexity(self, func: Function) -> int:
@@ -147,7 +148,7 @@ class AngrAnalysis(AnalysisBackend):
         for _ in func.blocks:
             num_blocks += 1
 
-        # do a CFG analysis starting at the func
+        # do a CFG analysis starting at the fun address
         cfg = self.target.analyses.CFGFast(
             force_complete_scan=False, start_at_entry=hex(func.addr)
         )
