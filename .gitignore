@@ -2,12 +2,9 @@ venv/
 build/
 dist/
 __pycache__/
-<<<<<<< HEAD
 build/
 dist/
-=======
 *.egg-info/
->>>>>>> 1629c1389beba2ad35e9eafbae6f6629e5698d65
 
 *.pyc
 .DS_Store

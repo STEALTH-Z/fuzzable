@@ -23,6 +23,7 @@ class CallScore:
     """Assigned fuzzability score for an individual function target."""
 
     name: str
+    loc: str
 
     # does not attribute to rank, but helps with determining what to filter
     toplevel: bool
@@ -105,12 +106,12 @@ class CallScore:
     @property
     def binja_markdown_row(self) -> str:
         """Output as a markdown/ascii table row when displaying back to user"""
-        return f"| [{self.name}](binaryninja://?expr={self.name}) | {self.score} | {self.fuzz_friendly} | {self.risky_sinks} | {self.natural_loops} | {self.cyclomatic_complexity} | {self.coverage_depth} | \n"
+        return f"| [{self.name}](binaryninja://?expr={self.name}) | {self.loc} | {self.score} | {self.fuzz_friendly} | {self.risky_sinks} | {self.natural_loops} | {self.cyclomatic_complexity} | {self.coverage_depth} | \n"
 
     @property
     def csv_row(self) -> str:
         """Generate a CSV row for exporting to file"""
-        return f"{self.name}, {self.stripped}, {self.fuzz_friendly}, {self.risky_sinks}, {self.natural_loops}, {self.cyclomatic_complexity}, {self.coverage_depth}, {self.score}\n"
+        return f"{self.name}, {self.loc}, {self.stripped}, {self.fuzz_friendly}, {self.risky_sinks}, {self.natural_loops}, {self.cyclomatic_complexity}, {self.coverage_depth}, {self.score}\n"
 
     @functools.cached_property
     def simple_fuzzability(self) -> int:

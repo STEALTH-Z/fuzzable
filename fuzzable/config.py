@@ -7,7 +7,10 @@ config.py
 import typing as t
 
 # Supported source code paths
-SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".h", ".hpp"]
+SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".h", ".hpp", ".hh"]
+
+# Source file patterns to ignore
+SOURCE_IGNORE = ["test", "example"]
 
 # Interesting symbol name patterns to check for fuzzable
 INTERESTING_PATTERNS: t.List[str] = [

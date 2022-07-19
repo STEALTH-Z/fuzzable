@@ -17,15 +17,14 @@ Check out the blog post detailing the plugin [here](https://codemuch.tech/2021/0
 ## Usage
 
 Some binary targets may require some sanitizing (ie. signature matching, or identifying functions from inlining), and therefore 
-__fuzzable__ primarily uses Binary Ninja as a disassembly backend because of it's ability to effectively solve these problems.
-Therefore, it can be utilized both as a standalone tool and plugin.
+__fuzzable__ primarily uses Binary Ninja as a disassembly backend because of it's ability to effectively solve these problems. Therefore, it can be utilized both as a standalone tool and plugin.
 
-Since Binary Ninja isn't accessible to all and there may be a demand to utilize this in the cloud at scale, an [angr](https://github.com/angr/angr)
-_fallback_ backend is also supported. I anticipate to incorporate other disassemblers down the road as well.
+Since Binary Ninja isn't accessible to all and there may be a demand to utilize for security assessments and potentially scaling up in the cloud, an [angr](https://github.com/angr/angr)
+_fallback_ backend is also supported. I anticipate to incorporate other disassemblers down the road as well (priority: Ghidra).
 
 ### Command Line (Standalone)
 
-If you have Binary Ninja Commercial, be sure to install the API for standalone headless usage:
+If you have Binary Ninja Commercial , be sure to install the API for standalone headless usage:
 
 ```
 $ python3 /Applications/Binary\ Ninja.app/Contents/Resources/scripts/install_api.py
@@ -55,6 +54,9 @@ accuracy identifying targets for fuzzing and further vulnerability assessment:
 ![Sample](https://github.com/ex0dus-0x/fuzzable/blob/main/screen.png?raw=true "Sample")
 
 ## Settings
+
+By default, __fuzzable__ will attempt to make intelligent decisions on which functions it should present
+back to you, and thus will ignore calls from analysis and showing up in the report.
 
 Given how diverse binaries are, the plugin provides several settings one may choose to tweak for different targets:
 

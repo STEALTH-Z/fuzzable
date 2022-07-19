@@ -3,24 +3,15 @@ angr.py
 
     Fallback disassembly backend, most likely for headless analysis.
 """
-import typing as t
-import logging
 import angr
-
-from rich.logging import RichHandler
 from angr.knowledge_plugins.functions.function import Function
+from angr.procedures.definitions.glibc import _libc_decls
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
+from ..log import log
 
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-
-
+# TODO: inherit angr.Analysis
 class AngrAnalysis(AnalysisBackend):
     def __init__(self, target: angr.Project, mode: AnalysisMode):
         super().__init__(target, mode)
@@ -37,6 +28,7 @@ class AngrAnalysis(AnalysisBackend):
             name = func.name
 
             if self.skip_analysis(func):
+                log.warning(f"Skipping {name} from fuzzability analysis.")
                 self.skipped += 1
                 continue
 
@@ -44,7 +36,7 @@ class AngrAnalysis(AnalysisBackend):
             if self.mode == AnalysisMode.RECOMMEND and not self.is_toplevel_call(func):
                 continue
 
-            log.debug(f"Analyzing over {name}")
+            log.info(f"Conducting fuzzability analysis on function symbol '{name}'")
             score = self.analyze_call(name, func)
             self.scores += [score]
 
@@ -62,6 +54,7 @@ class AngrAnalysis(AnalysisBackend):
 
         return CallScore(
             name=name,
+            loc=str(hex(func.addr)),
             toplevel=self.is_toplevel_call(func),
             fuzz_friendly=fuzz_friendly,
             risky_sinks=self.risky_sinks(func),
@@ -74,19 +67,24 @@ class AngrAnalysis(AnalysisBackend):
     def skip_analysis(self, func: Function) -> bool:
         name = func.name
 
-        # ignore imported functions from other libraries, ie glibc or win32api
-        if func.is_plt or func.is_syscall:
+        # ignore imported functions or syscalls
+        if func.is_syscall:
             return True
 
-        # TODO:
+        # ignore common glibc calls
+        if name in _libc_decls:
+            return True
+
+        # ignore runtime calls from the binary
         if name in ["_init", "frame_dummy", "call_weak_fn", "$x", "_fini"]:
             return True
 
+        # ignore instrumentation
         if name.startswith("__"):
             return True
 
         # if set, ignore all stripped functions for faster analysis
-        if ("sub_" in name) or ("Unresolvable" in name):
+        if "Unresolvable" in name:
             return True
 
         return False
@@ -103,7 +101,11 @@ class AngrAnalysis(AnalysisBackend):
 
     def risky_sinks(self, func: Function) -> int:
         log.debug(f"{func.name} - checking for risky sinks")
-        calls_reached = func.functions_called()
+        calls_reached = func.get_call_sites()
+        for callee in calls_reached:
+            # print(callee, type(callee))
+            pass
+
         return len(calls_reached)
 
     def get_coverage_depth(self, target: Function) -> int:
@@ -145,6 +147,9 @@ class AngrAnalysis(AnalysisBackend):
         for _ in func.blocks:
             num_blocks += 1
 
-        # TODO: fix up
-        num_edges = len(self.cfg.graph.edges())
+        # do a CFG analysis starting at the func
+        cfg = self.target.analyses.CFGFast(
+            force_complete_scan=False, start_at_entry=hex(func.addr)
+        )
+        num_edges = len(cfg.graph.edges())
         return num_edges - num_blocks + 2

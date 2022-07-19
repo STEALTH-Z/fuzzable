@@ -7,7 +7,6 @@ binja.py
 
 """
 import os
-from symtable import Symbol
 import typing as t
 
 import binaryninja
@@ -23,7 +22,7 @@ from binaryninja.plugin import BackgroundTaskThread
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
-from ..cli import COLUMNS
+from ..cli import COLUMNS, CSV_HEADER
 from ..generate import generate_harness
 
 
@@ -82,7 +81,7 @@ class BinjaAnalysis(
 
         # if headless, handle displaying results back
         if not self.headless:
-            csv_result = '"name", "fuzz_friendly", "risky_sinks", "natural_loops", "cyc_complex", "cov_depth", "fuzzability"\n'
+            csv_result = CSV_HEADER
             csv_result = ", ".join([f'"{column}"' for column in COLUMNS])
 
             # TODO: reuse rich for markdown
@@ -99,8 +98,8 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
 ## Ranked Table (MODE = {self.mode.name})
 
-| Function Signature | Fuzzability Score | Fuzz-Friendly Name | Risky Data Sinks | Natural Loops | Cyclomatic Complexity | Coverage Depth |
-|--------------------|-------------------|--------------------|------------------|---------------|-----------------------|----------------|
+| Function Signature | Location          | Fuzzability Score | Fuzz-Friendly Name | Risky Data Sinks | Natural Loops | Cyclomatic Complexity | Coverage Depth |
+|--------------------|-------------------|-------------------|--------------------|------------------|---------------|-----------------------|----------------|
 """
 
             for score in ranked:
@@ -125,6 +124,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
         return CallScore(
             name=name,
+            loc=str(hex(func.address_ranges[0].start)),
             toplevel=self.is_toplevel_call(func),
             fuzz_friendly=fuzz_friendly,
             risky_sinks=self.risky_sinks(func),
@@ -139,7 +139,6 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         symbol = func.symbol.type
         log.log_debug(f"{name} - {symbol}")
 
-        """
         # ignore imported functions from other libraries, ie glibc or win32api
         if symbol in [
             SymbolType.ImportedFunctionSymbol,
@@ -150,7 +149,6 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         ]:
             log.log_debug(f"{name} is an import, skipping")
             return True
-        """
 
         # ignore targets with patterns that denote some type of profiling instrumentation, ie stack canary
         if name.startswith("__"):
@@ -213,9 +211,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
                             risky_sinks += 1
 
                         # otherwise add to callstack and continue to trace arguments
-                        elif (call is SymbolType.ImportedFunctionSymbol) or (
-                            call is SymbolType.LibraryFunctionSymbol
-                        ):
+                        else:
                             callstack += [callee]
 
         return risky_sinks

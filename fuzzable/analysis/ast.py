@@ -65,8 +65,9 @@ class AstAnalysis(AnalysisBackend):
                 contents = fd.read()
 
             tree = self.parser.parse(contents)
-            # print(tree.root_node.sexp())
+            # log.trace(tree.root_node.sexp())
 
+            # TODO: skip out on `static` calls
             log.debug(f"{filename} - grabing function definitions")
             query = self.language.query(
                 """
@@ -85,6 +86,12 @@ class AstAnalysis(AnalysisBackend):
             contents = entry[1]
             for node in nodes:
 
+                if node in self.visited:
+                    log.debug(f"{node} - already analyzed previously")
+                    continue
+
+                self.visited += [node]
+
                 log.debug(f"{filename} - checking if we should skip analysis for node")
                 if self.skip_analysis(node):
                     self.skipped += 1
@@ -97,6 +104,7 @@ class AstAnalysis(AnalysisBackend):
                     log.debug(
                         f"{filename} - skipping over node, since it's not top-level for recommended mode"
                     )
+                    self.skipped += 1
                     continue
 
                 # get function name from the node
@@ -119,16 +127,20 @@ class AstAnalysis(AnalysisBackend):
                     log.warning(
                         f"{filename} - parsing failed for {node}, reason: {err}"
                     )
+                    self.skipped += 1
                     continue
 
                 log.debug(f"{filename} - analyzing function target {name}")
-                self.scores += [self.analyze_call(name, node, contents)]
+                self.scores += [self.analyze_call(name, node, filename, contents)]
 
         return super()._rank_fuzzability(self.scores)
 
-    def analyze_call(self, name: str, func: Node, contents: bytes) -> CallScore:
+    def analyze_call(
+        self, name: str, func: Node, filename: str, contents: bytes
+    ) -> CallScore:
         return CallScore(
             name=name,
+            loc=f"{filename}:{func.start_point[0]}",
             toplevel=self.is_top_level,
             fuzz_friendly=self.is_fuzz_friendly(name),
             risky_sinks=self.risky_sinks(func, contents),
@@ -191,13 +203,18 @@ class AstAnalysis(AnalysisBackend):
         # number of times an argument flows into a risky call
         instances = 0
 
-        # grab the parameter list and parse the parameters on our own
+        # grab the parameter list and parse the parameters on our own,
+        # ignore if we don't have any parameters
         query = self.language.query(
             """
         (parameter_list) @capture
         """
         )
-        capture = [n for (n, _) in query.captures(func)][0]
+        captures = query.captures(func)
+        if len(captures) == 0:
+            return instances
+
+        capture = [n for (n, _) in captures][0]
         param_list = contents[capture.start_byte + 1 : capture.end_byte - 1].decode(
             "utf8"
         )

@@ -23,30 +23,6 @@ Settings().register_setting(
 """,
 )
 
-Settings().register_setting(
-    "fuzzable.loop_increase_score",
-    """
-    {
-        "title"         : "Don't score natural loop presence",
-        "description"   : "Don't include natural loop as part of the fuzzability score",
-        "type"          : "boolean",
-        "default"       : false
-    }
-""",
-)
-
-Settings().register_setting(
-    "fuzzable.skip_stripped",
-    """
-    {
-        "title"         : "Skip stripped functions for analysis",
-        "description"   : "Turn on if stripped functions are abundant and costly to analyze, and known to be irrelevant.",
-        "type"          : "boolean",
-        "default"       : false
-    }
-""",
-)
-
 PluginCommand.register(
     "Fuzzable\\Analysis Mode\\Recommend Fuzzable Functions (much faster)",
     "List out functions we've determined to be the best candidates for fuzzing."

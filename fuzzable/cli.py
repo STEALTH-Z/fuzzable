@@ -22,7 +22,7 @@ ERROR_START = typer.style(
 
 COLUMNS = [
     "Function Signature",
-    # "Location",
+    "Location",
     "Fuzzability Score",
     "Fuzz-Friendly Name",
     "Risky Data Sinks",
@@ -30,6 +30,9 @@ COLUMNS = [
     "Cyclomatic Complexity",
     "Coverage Depth",
 ]
+
+# TODO: merge with the one above
+CSV_HEADER = '"name", "loc, "fuzz_friendly", "risky_sinks", "natural_loops", "cyc_complex", "cov_depth", "fuzzability"\n'
 
 
 def error(string: str) -> None:
@@ -51,6 +54,7 @@ def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
     for row in fuzzability:
         table.add_row(
             row.name,
+            row.loc,
             str(row.score),
             str(row.fuzz_friendly),
             str(row.risky_sinks),

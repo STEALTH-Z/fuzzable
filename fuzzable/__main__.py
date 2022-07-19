@@ -5,30 +5,21 @@ __main__.py
     Command line entry point for launching the standalone CLI executable.
 """
 import os
+import logging
 import typing as t
 import typer
 import lief
-import logging
 
 from rich import print
-from rich.logging import RichHandler
 
 from fuzzable import generate
-from fuzzable.config import SOURCE_FILE_EXTS
+from fuzzable.config import SOURCE_FILE_EXTS, SOURCE_IGNORE
 from fuzzable.cli import print_table, error
 from fuzzable.analysis import AnalysisBackend, AnalysisMode
 from fuzzable.analysis.ast import AstAnalysis
-from fuzzable.analysis.angr import AngrAnalysis
+from fuzzable.log import log
 
 from pathlib import Path
-
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
-log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
-
 
 app = typer.Typer(
     help="Framework for Automating Fuzzable Target Discovery with Static Analysis"
@@ -41,40 +32,43 @@ def analyze(
     mode: t.Optional[str] = typer.Option(
         "recommend",
         help="Analysis mode to run under (either `recommend` or `rank`, default is `recommend`)."
-        "See docs for more details about which to select.",
+        "See documentation for more details about which to select.",
     ),
-    out_csv: t.Optional[str] = typer.Option(
+    export: t.Optional[str] = typer.Option(
         None,
-        help="Export the analysis as a CSV to a path (default is `temp.csv`).",
+        help="Export the fuzzability report based on the file extension."
+        "Fuzzable supports either a raw CSV (.csv) file or Markdown.",
+    ),
+    list_ignored: bool = typer.Option(
+        False,
+        help="If set, will also additionally output or export ignored symbols.",
     ),
     debug: bool = typer.Option(
         False,
-        help="If set, will turn on debug logs.",
+        help="If set, will be verbose and output debug information.",
     ),
 ):
     """
-    Run fuzzable analysis on a single or workspace of C/C++ source files, or a binary.
+    Run fuzzable analysis on a single or workspace of C/C++ source files, or a compiled binary.
     """
-
-    # TODO: set different levels?
     if debug:
         log.setLevel(logging.DEBUG)
 
     try:
         mode = AnalysisMode[mode.upper()]
     except Exception:
-        return None
+        error(f"Invalid analysis mode `{mode}`. Must either be `recommend` or `rank`.")
 
     log.info(f"Starting fuzzable on {target}")
     if target.is_file():
-        run_on_file(target, mode, out_csv)
+        run_on_file(target, mode, export)
     elif target.is_dir():
-        run_on_workspace(target, mode, out_csv)
+        run_on_workspace(target, mode, export)
     else:
         error(f"Target path `{target}` does not exist")
 
 
-def run_on_file(target: Path, mode: AnalysisMode, out_csv: t.Optional[Path]) -> None:
+def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> None:
     """Runs analysis on a single source code file or binary file."""
     analyzer: t.TypeVar[AnalysisBackend]
     if target.suffix in SOURCE_FILE_EXTS:
@@ -93,18 +87,17 @@ def run_on_file(target: Path, mode: AnalysisMode, out_csv: t.Optional[Path]) -> 
 
         # didn't work, try to load angr as a fallback instead
         except Exception:
-            import angr
-
             log.warning(
                 f"Cannot load Binary Ninja as a backend. Attempting to load angr instead."
             )
             try:
+                import angr
+                from fuzzable.analysis.angr import AngrAnalysis
+
                 proj = angr.Project(target, load_options={"auto_load_libs": False})
                 analyzer = AngrAnalysis(proj, mode)
-            except Exception:
-                error(
-                    f"Unsupported file type `{target.suffix}`. Must be either a binary or a C/C++ source"
-                )
+            except Exception as err:
+                error(f"Unsupported target {target}. Reason: {err}")
 
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
@@ -112,7 +105,7 @@ def run_on_file(target: Path, mode: AnalysisMode, out_csv: t.Optional[Path]) -> 
 
 
 def run_on_workspace(
-    target: Path, mode: AnalysisMode, out_csv: t.Optional[Path]
+    target: Path, mode: AnalysisMode, export: t.Optional[Path]
 ) -> None:
     """
     Given a workspace, recursively iterate and parse out all of the source code files
@@ -121,7 +114,9 @@ def run_on_workspace(
     source_files = []
     for subdir, _, files in os.walk(target):
         for file in files:
-            if Path(file).suffix in SOURCE_FILE_EXTS and "test" not in file:
+            if Path(file).suffix in SOURCE_FILE_EXTS and not any(
+                [pat in str(file) for pat in SOURCE_IGNORE]
+            ):
                 log.info(f"Adding {file} to set of source code to analyze")
                 source_files += [Path(os.path.join(subdir, file))]
 
