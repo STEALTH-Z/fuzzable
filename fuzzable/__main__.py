@@ -114,9 +114,7 @@ def run_on_workspace(
     source_files = []
     for subdir, _, files in os.walk(target):
         for file in files:
-            if Path(file).suffix in SOURCE_FILE_EXTS and not any(
-                [pat in str(file) for pat in SOURCE_IGNORE]
-            ):
+            if Path(file).suffix in SOURCE_FILE_EXTS:
                 log.info(f"Adding {file} to set of source code to analyze")
                 source_files += [Path(os.path.join(subdir, file))]
 

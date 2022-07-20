@@ -49,7 +49,7 @@ PluginCommand.register(
 )
 
 PluginCommand.register_for_function(
-    "Fuzzable\\Harness Generation\\Generate fuzzing harness (EXPERIMENTAL, C/C++ ONLY)",
-    "For a target function, generate a AFL/libFuzzer C++ harness",
+    "Fuzzable\\Harness Generation\\Generate binary fuzzing harness (C/C++ ONLY)",
+    "For a target function, generate a AFL-QEMU/libFuzzer C++ harness",
     binja.run_harness_generation,
 )

@@ -27,6 +27,10 @@ class AngrAnalysis(AnalysisBackend):
         for _, func in self.cfg.functions.items():
             name = func.name
 
+            if name in self.visited:
+                continue
+            self.visited += [name]
+
             if self.skip_analysis(func):
                 log.warning(f"Skipping {name} from fuzzability analysis.")
                 self.skipped += 1
@@ -47,7 +51,7 @@ class AngrAnalysis(AnalysisBackend):
 
         # no need to check if no name available
         # TODO: maybe we should run this if a signature was recovered
-        fuzz_friendly = False
+        fuzz_friendly = 0
         if not stripped:
             log.debug(f"{name} - checking if fuzz friendly")
             fuzz_friendly = AngrAnalysis.is_fuzz_friendly(name)

@@ -8,7 +8,7 @@
  *
  *      To build for AFL-QEMU, optimal for black-box and file-based fuzzing:
  *
- *          $ clang {NAME}_{function_name}_harness.cpp -no-pie -o {NAME}_{function_name}_harness -ldl
+ *          $ gcc {NAME}_{function_name}_harness.cpp -no-pie -o {NAME}_{function_name}_harness -ldl
  * 
  *          # check out more binary fuzzing strategies at https://aflplus.plus/docs/binaryonly_fuzzing/
  *          $ afl-fuzz -Q -m none -i <SEEDS> -o out/ -- ./{NAME}_{function_name}_harness
@@ -26,6 +26,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #define FUZZER_BUF 1024 * 1024
 #define TARGET_NAME "{function_name}"
@@ -56,7 +60,7 @@ extern "C"
 #endif
 int LoadLibrary(void)
 {{
-    handle = dlopen("./{NAME}", RTLD_LAZY);
+    handle = dlopen("./{path}", RTLD_LAZY);
     atexit(CloseLibrary);
     return handle != NULL;
 }}

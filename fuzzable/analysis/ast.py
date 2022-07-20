@@ -86,28 +86,7 @@ class AstAnalysis(AnalysisBackend):
             contents = entry[1]
             for node in nodes:
 
-                if node in self.visited:
-                    log.debug(f"{node} - already analyzed previously")
-                    continue
-
-                self.visited += [node]
-
-                log.debug(f"{filename} - checking if we should skip analysis for node")
-                if self.skip_analysis(node):
-                    self.skipped += 1
-                    log.debug(f"{filename} - skipping over this one")
-                    continue
-
-                # if recommend mode, filter and run only those that are top-level
-                self.is_top_level = self.is_toplevel_call(node)
-                if self.mode == AnalysisMode.RECOMMEND and not self.is_top_level:
-                    log.debug(
-                        f"{filename} - skipping over node, since it's not top-level for recommended mode"
-                    )
-                    self.skipped += 1
-                    continue
-
-                # get function name from the node
+                # first, parse out name to see if we should visit again
                 log.debug(
                     f"{filename} - attempting to capture function symbol name for the current node AST"
                 )
@@ -126,6 +105,26 @@ class AstAnalysis(AnalysisBackend):
                 except Exception as err:
                     log.warning(
                         f"{filename} - parsing failed for {node}, reason: {err}"
+                    )
+                    self.skipped += 1
+                    continue
+
+                if name in self.visited:
+                    log.debug(f"{node} - already analyzed previously")
+                    continue
+                self.visited += [name]
+
+                log.debug(f"{filename} - checking if we should skip analysis for node")
+                if self.skip_analysis(name):
+                    self.skipped += 1
+                    log.debug(f"{filename} - skipping over this one")
+                    continue
+
+                # if recommend mode, filter and run only those that are top-level
+                self.is_top_level = self.is_toplevel_call(node)
+                if self.mode == AnalysisMode.RECOMMEND and not self.is_top_level:
+                    log.debug(
+                        f"{filename} - skipping over node, since it's not top-level for recommended mode"
                     )
                     self.skipped += 1
                     continue
@@ -150,12 +149,19 @@ class AstAnalysis(AnalysisBackend):
             stripped=False,
         )
 
-    def skip_analysis(self, func: Node) -> bool:
+    def skip_analysis(self, name: str) -> bool:
         """
-        TODO
-        - match on standard library calls
-        - skip inlined calls
+        WIP
         """
+
+        # name parsed is primitive type, skip
+        if name in ["void", "int", "char"]:
+            return True
+
+        # TODO: might be type, make this check better tho
+        if name.isupper() or name.endswith("_t") or "*" in name:
+            return True
+
         return False
 
     def is_toplevel_call(self, target: str) -> bool:

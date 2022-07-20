@@ -62,7 +62,7 @@ def generate_harness(
 
     log.debug("Replacing elements")
     name = os.path.basename(target_name).split(".")[0]
-    template = template.replace("{NAME}", name)
+    template = template.replace("{NAME}", os.path.basename(target_name))
     template = template.replace("{function_name}", function_name)
 
     if return_type:
@@ -71,7 +71,7 @@ def generate_harness(
         template = template.replace("{type_args}", params)
 
     log.debug("Finalizing harness")
-    harness = f"{target_name}_{function_name}_harness.cpp"
+    harness = f"{name}_{function_name}_harness.cpp"
     if output is not None:
         harness = output
 

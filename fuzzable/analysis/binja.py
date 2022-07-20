@@ -47,11 +47,23 @@ class BinjaAnalysis(
         return "Binary Ninja"
 
     def run(self) -> t.Optional[Fuzzability]:
+        self.view.update_analysis_and_wait()
         funcs = self.view.functions
 
         log.log_info(f"Starting fuzzable analysis over {len(funcs)} symbols in binary")
         for func in funcs:
             name = func.name
+
+            # manually deal with GOT/PLT resolving, where we'll just
+            # adopt the call as ourselves if its a tailcall
+            # TODO: make betterrrr
+            # if len(func.callees) == 1:
+            #    if func.callees[0].name == name:
+            #        func = func.callees[0]
+
+            if name in self.visited:
+                continue
+            self.visited += [name]
 
             log.log_debug("Checking to see if we should ignore")
             if self.skip_analysis(func):
@@ -139,6 +151,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         symbol = func.symbol.type
         log.log_debug(f"{name} - {symbol}")
 
+        """
         # ignore imported functions from other libraries, ie glibc or win32api
         if symbol in [
             SymbolType.ImportedFunctionSymbol,
@@ -149,6 +162,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         ]:
             log.log_debug(f"{name} is an import, skipping")
             return True
+        """
 
         # ignore targets with patterns that denote some type of profiling instrumentation, ie stack canary
         if name.startswith("__"):
@@ -156,7 +170,8 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
             return True
 
         # if set, ignore all stripped functions for faster analysis
-        if ("sub_" in name) and Settings().get_bool("fuzzable.skip_stripped"):
+        # if ("sub_" in name) and Settings().get_bool("fuzzable.skip_stripped"):
+        if "sub_" in name:
             log.log_debug(f"{name} is stripped, skipping")
             return True
 
@@ -235,6 +250,8 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
             # add all childs to callgraph, and add those we haven't recursed into callstack
             for child in func.callees:
+
+                # if address attempt to resolve call
                 if child.name not in self.visited:
                     callstack += [child]
 
@@ -307,7 +324,7 @@ def run_harness_generation(view, func) -> None:
     """Experimental automatic fuzzer harness generation support"""
 
     log.log_debug("Reading closed-source template from codebase")
-    target_name = view.file.filename.split(".")[0]
+    target_name = os.path.basename(view.file.filename).split(".")[0]
     template_file = os.path.join(
         binaryninja.user_plugin_path(),
         "fuzzable/templates/linux_closed_source_harness.cpp",
@@ -318,13 +335,14 @@ def run_harness_generation(view, func) -> None:
     params = [f"{param.type} {param.name}" for param in func.parameter_vars.vars]
 
     log.log_debug("Generating harness from template")
-    template = template.replace("{NAME}", os.path.basename(target_name))
+    template = template.replace("{NAME}", target_name)
+    template = template.replace("{path}", os.path.basename(view.file.filename))
     template = template.replace("{function_name}", func.name)
     template = template.replace("{return_type}", str(func.return_type))
     template = template.replace("{type_args}", ", ".join(params))
 
     log.log_debug("Getting filename to write to")
-    harness = f"{target_name}_{func.name}_harness.cpp"
+    harness = f"{view.file.filename.split('.')[0]}_{func.name}_harness.cpp"
     # harness = interaction.get_save_filename_input("Path to write to?", "cpp", default_name)
     # harness = harness.decode("utf-8") + ".cpp"
 

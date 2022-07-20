@@ -37,7 +37,11 @@ class AnalysisBackend(abc.ABC):
         # number of functions not analyzed
         self.skipped: int = 0
 
+        # stores all the scores we've measured from the functions
         self.scores: t.List[t.Any] = []
+
+        # caches names of calls we've visited already to skip repeats
+        # TODO: function overload??
         self.visited: t.List[t.Any] = []
 
     @abc.abstractmethod
@@ -53,6 +57,15 @@ class AnalysisBackend(abc.ABC):
         """
         pass
 
+    @staticmethod
+    def _normalize(lst: t.List[int]) -> t.List[int]:
+        xmin = min(lst)
+        xmax = max(lst)
+        for i, x in enumerate(lst):
+            lst[i] = (x - xmin) / (xmax - xmin)
+
+        return lst
+
     def _rank_fuzzability(self, unranked: t.List[CallScore]) -> Fuzzability:
         """
         After analyzing each function call, use scikit-criteria to rank based on the call score
@@ -65,13 +78,29 @@ class AnalysisBackend(abc.ABC):
         if not SCIKIT:
             return self._rank_simple_fuzzability(unranked)
 
+        # normalize
+        nl_normalized = AnalysisBackend._normalize(
+            [score.natural_loops for score in unranked]
+        )
+        for score, new_nl in zip(unranked, nl_normalized):
+            score.natural_loops = new_nl
+
+        cc_normalized = AnalysisBackend._normalize(
+            [score.cyclomatic_complexity for score in unranked]
+        )
+        for score, new_cc in zip(unranked, cc_normalized):
+            score.cyclomatic_complexity = new_cc
+
+        # construct our matrix
         matrix = [score.matrix_row for score in unranked]
         names = [score.name for score in unranked]
 
         objectives = [max, max, max, max, max]
+        # weights = [0.245, 0.245, 0.17, 0.17, 0.17]
         dm = skc.mkdm(
             matrix,
             objectives,
+            # weights=weights,
             alternatives=names,
             criteria=[
                 "fuzz_friendly",
@@ -101,6 +130,19 @@ class AnalysisBackend(abc.ABC):
         return sorted_results
 
     def _rank_simple_fuzzability(self, unranked: t.List[CallScore]) -> Fuzzability:
+        # normalize
+        nl_normalized = AnalysisBackend._normalize(
+            [score.natural_loops for score in unranked]
+        )
+        for score, new_nl in zip(unranked, nl_normalized):
+            score.natural_loops = new_nl
+
+        cc_normalized = AnalysisBackend._normalize(
+            [score.cyclomatic_complexity for score in unranked]
+        )
+        for score, new_cc in zip(unranked, cc_normalized):
+            score.cyclomatic_complexity = new_cc
+
         return sorted(unranked, key=lambda x: x.simple_fuzzability, reverse=True)
 
     @abc.abstractmethod
