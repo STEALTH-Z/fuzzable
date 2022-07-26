@@ -285,8 +285,8 @@ def run_export_csv(view: BinaryView) -> None:
     csv_file = csv_file.decode("utf-8") + ".csv"
 
     log.log_info(f"Writing to filepath {csv_file}")
-    with open(csv_file, "w+") as fd:
-        fd.write(csv_output)
+    with open(csv_file, "w+", encoding="utf-8") as csv_file:
+        csv_file.write(csv_output)
 
     interaction.show_message_box("Success", f"Done, exported to {csv_file}")
 
@@ -306,13 +306,13 @@ def run_export_md(view: BinaryView) -> None:
     md_file = md_file.decode("utf-8") + ".md"
 
     # parse out template based on executable format, and start replacing
-    with open(md_file, "w+") as fd:
-        fd.write(markdown_output)
+    with open(md_file, "w+", encoding="utf-8") as mkdown:
+        mkdown.write(markdown_output)
 
     interaction.show_message_box("Success", f"Done, exported to {md_file}")
 
 
-def run_harness_generation(view, func) -> None:
+def run_harness_generation(view, func: Function) -> None:
     """Experimental automatic fuzzer harness generation support"""
 
     log.log_debug("Reading closed-source template from codebase")
@@ -321,8 +321,8 @@ def run_harness_generation(view, func) -> None:
         binaryninja.user_plugin_path(),
         "fuzzable/templates/linux_closed_source_harness.cpp",
     )
-    with open(template_file, "r") as fd:
-        template = fd.read()
+    with open(template_file, "r", encoding="utf-8") as harness:
+        template = harness.read()
 
     params = [f"{param.type}" for param in func.parameter_vars.vars]
 
@@ -339,7 +339,7 @@ def run_harness_generation(view, func) -> None:
     # harness = harness.decode("utf-8") + ".cpp"
 
     log.log_info(f"Writing harness `{harness}` to workspace")
-    with open(harness, "w+") as fd:
-        fd.write(template)
+    with open(harness, "w+", encoding="utf-8") as harness:
+        harness.write(template)
 
     # interaction.show_message_box("Success", f"Done, wrote fuzzer harness to {harness}")

@@ -46,8 +46,8 @@ def error(string: str) -> None:
 
 
 def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
-    print("\n")
-    table = Table(title=f"Fuzzable Report for Target `{target}`")
+    """Pretty-prints fuzzability results for the CLI"""
+    table = Table(title=f"\nFuzzable Report for Target `{target}`")
     for column in COLUMNS:
         table.add_column(column, style="magenta")
 

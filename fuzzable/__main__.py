@@ -142,14 +142,6 @@ def create_harness(
     out_harness: t.Optional[str] = typer.Option(
         None, help="Specify to set output harness template file path."
     ),
-    file_fuzzing: bool = typer.Option(
-        False,
-        help="If enabled, will generate a harness that takes a filename parameter instead of reading from STDIN.",
-    ),
-    libfuzzer: bool = typer.Option(
-        False,
-        help="If enabled, will set the flag that compiles the harness as a libFuzzer harness instead of for AFL.",
-    ),
 ):
     """Synthesize a AFL++/libFuzzer harness for a given symbol in a binary target (TODO: source)."""
     if not symbol_name:

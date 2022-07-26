@@ -4,6 +4,8 @@
 
 Framework for Automating _Fuzzable_ Target Discovery with Static Analysis
 
+![example](/extras/cli.png "CLI Example")
+
 ## Introduction
 
 Vulnerability researchers conducting security assessments on software will often harness the capabilities of coverage-guided fuzzing through powerful tools like AFL++ and libFuzzer. This is important as it automates the bughunting process and reveals exploitable conditions in targets quickly. However, when encountering large and complex codebases or closed-source binaries, researchers have to painstakingly dedicate time to manually audit and reverse engineer them to identify functions where fuzzing-based exploration can be useful.
@@ -46,19 +48,45 @@ $ pip install fuzzable
 You can now analyze binaries and/or source code with the tool!
 
 ```
+# analyzing a single shared object library binary
 $ fuzzable analyze examples/binaries/libsimple.so.1
 
+# analyzing a single C source file
 $ fuzzable analyze examples/source/libsimple.c
 
+# analyzing a workspace with multiple C/C++ files and headers
 $ fuzzable analyze examples/source/source_bundle/
 ```
 
 ### Binary Ninja Plugin
 
-Here is an example of the __fuzzable__ plugin running on [cesanta/mjs](https://github.com/cesanta/mjs),
+__fuzzable__ can be easily installed through the Binary Ninja plugin marketplace by going to `Binary Ninja > Manage Plugins` and searching for it. Here is an example of the __fuzzable__ plugin running on [cesanta/mjs](https://github.com/cesanta/mjs),
 accuracy identifying targets for fuzzing and further vulnerability assessment:
 
-![Sample](https://github.com/ex0dus-0x/fuzzable/blob/main/screen.png?raw=true "Sample")
+![binja_example](/extras/binja_example.png "Binary Ninja Example")
+
+### Manual / Development
+
+We use [poetry](https://python-poetry.org) for dependency management. To do a manual build, clone the repository with the third-party modules:
+
+```
+$ git clone --recursive https://github.com/ex0dus-0x/fuzzable
+```
+
+To install manually:
+
+```
+$ cd fuzzable/
+
+# without poetry
+$ pip install .
+
+# with poetry
+$ poetry install
+
+# with poetry for a development virtualenv
+$ poetry shell
+```
 
 ## Settings
 

@@ -4,24 +4,18 @@ ast.py
     Fuzzable analysis support for C/C++ code by through query on top of pycparser ASTs.
 
 """
+import os
 import typing as t
-import logging
 
-from rich.logging import RichHandler
 from tree_sitter import Language, Node, Parser
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
+from ..log import log
 
 # Compiled shared object for language support
-BUILD_PATH = "build/lang.so"
-
-FORMAT = "%(message)s"
-logging.basicConfig(
-    level="NOTSET", format=FORMAT, datefmt="[%X]", handlers=[RichHandler()]
-)
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+BUILD_PATH = os.path.join(ROOT_DIR, "build/lang.so")
 
 
 class AstAnalysis(AnalysisBackend):
@@ -33,7 +27,10 @@ class AstAnalysis(AnalysisBackend):
         log.debug("Building third-party tree-sitter libraries for C/C++ languages")
         Language.build_library(
             BUILD_PATH,
-            ["third_party/tree-sitter-c", "third_party/tree-sitter-cpp"],
+            [
+                os.path.join(ROOT_DIR, "third_party/tree-sitter-c"),
+                os.path.join(ROOT_DIR, "third_party/tree-sitter-cpp"),
+            ],
         )
         self.language = Language(BUILD_PATH, "c")
         self.parser = Parser()
@@ -62,8 +59,8 @@ class AstAnalysis(AnalysisBackend):
 
             self.parser.set_language(self.language)
 
-            with open(filename, "rb") as fd:
-                contents = fd.read()
+            with open(filename, "rb") as source_file:
+                contents = source_file.read()
 
             tree = self.parser.parse(contents)
             # log.trace(tree.root_node.sexp())
@@ -81,7 +78,7 @@ class AstAnalysis(AnalysisBackend):
             self.parsed_symbols[str(filename)] = (captures, contents)
 
         # now analyze each function_definition node
-        log.debug(f"{filename} - iterating over symbols in all files")
+        log.debug("Iterating over symbols in all files")
         for filename, entry in self.parsed_symbols.items():
             nodes = entry[0]
             contents = entry[1]
@@ -205,7 +202,7 @@ class AstAnalysis(AnalysisBackend):
         TODO: this dataflow analysis is quite rudimentary and doesn't account
         for reassignments
         """
-        log.debug(f"Checking for risky sinks")
+        log.debug(f"{func} - checking for risky sinks")
 
         # number of times an argument flows into a risky call
         instances = 0

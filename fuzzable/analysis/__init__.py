@@ -1,3 +1,9 @@
+"""
+__init__.py
+
+    Implements the base class and exception for different static analysis backends.
+"""
+
 import abc
 import enum
 import typing as t
@@ -41,12 +47,11 @@ class AnalysisBackend(abc.ABC):
         self.scores: t.List[t.Any] = []
 
         # caches names of calls we've visited already to skip repeats
-        # TODO: function overload??
         self.visited: t.List[t.Any] = []
 
     @abc.abstractmethod
     def __str__(self) -> str:
-        pass
+        ...
 
     @abc.abstractmethod
     def run(self) -> Fuzzability:
@@ -55,7 +60,7 @@ class AnalysisBackend(abc.ABC):
         If the mode to recommend targets, determine and statically analyze only top-level calls.
         If the mode is to rank targets, iterate and analyze over all calls and rank.
         """
-        pass
+        ...
 
     def _rank_fuzzability(self, unranked: t.List[CallScore]) -> Fuzzability:
         """
@@ -88,7 +93,7 @@ class AnalysisBackend(abc.ABC):
 
         objectives = [max, max, max, max, max]
         weights = [0.3, 0.3, 0.05, 0.05, 0.3]
-        dm = skc.mkdm(
+        decision_matrix = skc.mkdm(
             matrix,
             objectives,
             weights=weights,
@@ -103,7 +108,7 @@ class AnalysisBackend(abc.ABC):
         )
 
         dec = simple.WeightedSumModel()
-        rank = dec.evaluate(dm)
+        rank = dec.evaluate(decision_matrix)
 
         # TODO make this better
 
@@ -121,7 +126,6 @@ class AnalysisBackend(abc.ABC):
         return sorted_results
 
     def _rank_simple_fuzzability(self, unranked: t.List[CallScore]) -> Fuzzability:
-        # normalize
         nl_normalized = AnalysisBackend._normalize(
             [score.natural_loops for score in unranked]
         )
@@ -134,15 +138,16 @@ class AnalysisBackend(abc.ABC):
         for score, new_cc in zip(unranked, cc_normalized):
             score.cyclomatic_complexity = new_cc
 
-        return sorted(unranked, key=lambda x: x.simple_fuzzability, reverse=True)
+        return sorted(unranked, key=lambda obj: obj.simple_fuzzability, reverse=True)
 
     @staticmethod
     def _normalize(lst: t.List[int]) -> t.List[int]:
+        """Normalize values in a list based on upper and lower bounds"""
         xmin = min(lst)
         xmax = max(lst)
-        for i, x in enumerate(lst):
+        for i, val in enumerate(lst):
             if (xmax - xmin) != 0:
-                lst[i] = (x - xmin) / (xmax - xmin)
+                lst[i] = (val - xmin) / (xmax - xmin)
 
         return lst
 
@@ -152,7 +157,7 @@ class AnalysisBackend(abc.ABC):
         Runs heuristics we declare below on an individual function call, and
         return a `CallScore` describing heuristics matched.
         """
-        pass
+        ...
 
     @abc.abstractmethod
     def skip_analysis(self, func: t.Any) -> bool:
@@ -160,7 +165,7 @@ class AnalysisBackend(abc.ABC):
         Helper to determine if a parsed function should be skipped
         for analysis based on certain criteria for the analysis backend.
         """
-        pass
+        ...
 
     @staticmethod
     def is_fuzz_friendly(symbol_name: str) -> int:
@@ -181,7 +186,7 @@ class AnalysisBackend(abc.ABC):
         Checks to see if the function is top-level, aka is not invoked by any other function
         in the current binary/codebase context.
         """
-        pass
+        ...
 
     @abc.abstractmethod
     def risky_sinks(self, func: t.Any) -> int:
@@ -190,7 +195,7 @@ class AnalysisBackend(abc.ABC):
         Checks to see if one or more of the function's arguments is
         potentially user-controlled, and flows into an abusable call.
         """
-        pass
+        ...
 
     @staticmethod
     def _is_risky_call(name: str) -> bool:
@@ -204,7 +209,7 @@ class AnalysisBackend(abc.ABC):
         Calculates and returns a `CoverageReport` that highlights how much
         a fuzzer would ideally explore at different granularities.
         """
-        pass
+        ...
 
     @abc.abstractmethod
     def natural_loops(self, func: t.Any) -> int:
@@ -215,13 +220,16 @@ class AnalysisBackend(abc.ABC):
         same basic block exists in the dominance frontier set, then that means the block will
         loop back to itself at some point in execution.
         """
-        pass
+        ...
 
-    @abc.abstractclassmethod
+    @abc.abstractmethod
     def get_cyclomatic_complexity(self) -> int:
         """
         HEURISTIC
+        Calculates the complexity of a given function using McCabe's metric. We do not
+        account for connected components since we assume that the target is a singular
+        connected component.
 
-        M = E − N + 2P
+        CC = Edges − Nodes/Blocks + 2
         """
-        pass
+        ...

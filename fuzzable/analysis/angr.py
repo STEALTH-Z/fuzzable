@@ -140,9 +140,9 @@ class AngrAnalysis(AnalysisBackend):
 
     def natural_loops(self, func: Function) -> int:
         log.debug(f"{func.name} - getting natural loops")
-        df = self.target.analyses.DominanceFrontier(func)
-        if df.frontiers:
-            return len(df.frontiers)
+        dominance_frontier = self.target.analyses.DominanceFrontier(func)
+        if dominance_frontier.frontiers:
+            return len(dominance_frontier.frontiers)
 
         return 0
 

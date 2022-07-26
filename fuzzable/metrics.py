@@ -57,23 +57,23 @@ class CallScore:
 
     @property
     def rank(self) -> int:
+        """Rank of an individual function in a list of parsed functions"""
         return self._final_rank
 
     @property
     def score(self) -> float:
+        """Final calculated fuzzability score based on metrics"""
         return self._final_score
 
     @rank.setter
-    def rank(self, r: int):
-        self._final_rank = r
-
-    @property
-    def score(self) -> float:
-        return self._final_score
+    def rank(self, to_set: int) -> None:
+        """Call to set the rank after analysis and ranking"""
+        self._final_rank = to_set
 
     @score.setter
-    def score(self, s: float) -> float:
-        self._final_score = s
+    def score(self, to_set: float) -> float:
+        """Call to set the fuzzability score after analysis and calculation"""
+        self._final_score = to_set
 
     """
     Overloaded operators for sorting
