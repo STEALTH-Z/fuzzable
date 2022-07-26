@@ -36,7 +36,6 @@ FALSE_POSITIVE_SIMILARS: t.List[str] = [
 RISKY_GLIBC_CALL_PATTERNS: t.List[str] = [
     "cmp",
     "cpy",
-    "free",
     "alloc",
     "create",
 ]

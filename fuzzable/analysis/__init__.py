@@ -62,7 +62,8 @@ class AnalysisBackend(abc.ABC):
         xmin = min(lst)
         xmax = max(lst)
         for i, x in enumerate(lst):
-            lst[i] = (x - xmin) / (xmax - xmin)
+            if (xmax - xmin) != 0:
+                lst[i] = (x - xmin) / (xmax - xmin)
 
         return lst
 
@@ -96,11 +97,11 @@ class AnalysisBackend(abc.ABC):
         names = [score.name for score in unranked]
 
         objectives = [max, max, max, max, max]
-        # weights = [0.245, 0.245, 0.17, 0.17, 0.17]
+        weights = [0.3, 0.3, 0.05, 0.05, 0.3]
         dm = skc.mkdm(
             matrix,
             objectives,
-            # weights=weights,
+            weights=weights,
             alternatives=names,
             criteria=[
                 "fuzz_friendly",

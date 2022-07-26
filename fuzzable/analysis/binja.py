@@ -16,8 +16,7 @@ import binaryninja.interaction as interaction
 from binaryninja import BinaryView
 from binaryninja.function import Function
 from binaryninja.lowlevelil import LowLevelILReg
-from binaryninja.enums import LowLevelILOperation, SymbolType
-from binaryninja.settings import Settings
+from binaryninja.enums import LowLevelILOperation
 from binaryninja.plugin import BackgroundTaskThread
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
@@ -61,8 +60,8 @@ class BinjaAnalysis(
             #    if func.callees[0].name == name:
             #        func = func.callees[0]
 
-            if name in self.visited:
-                continue
+            # if name in self.visited:
+            #    continue
             self.visited += [name]
 
             log.log_debug("Checking to see if we should ignore")
@@ -76,16 +75,6 @@ class BinjaAnalysis(
 
             log.log_info(f"Starting analysis for function {name}")
             score = self.analyze_call(name, func)
-
-            """
-            # if a loop is detected in the target, and it exists as part a callgraph,
-            # set has_loop for that parent as well
-            for prev in self.scores:
-                if score.natural_loops != 0 and score.name in prev.visited:
-                    prev.natural_loops = True
-            """
-
-            # TODO: more filtering with RECOMMEND
             self.scores += [score]
 
         log.log_info("Done, ranking the analyzed calls for reporting")
@@ -195,6 +184,9 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
             # Iterate over each argument and check for taint sinks
             for arg in func.parameter_vars:
+                if arg.type != "char*":
+                    continue
+
                 arg_refs = func.get_hlil_var_refs(arg)
 
                 log.log_debug(f"{func.name}: {arg_refs}")
@@ -332,7 +324,7 @@ def run_harness_generation(view, func) -> None:
     with open(template_file, "r") as fd:
         template = fd.read()
 
-    params = [f"{param.type} {param.name}" for param in func.parameter_vars.vars]
+    params = [f"{param.type}" for param in func.parameter_vars.vars]
 
     log.log_debug("Generating harness from template")
     template = template.replace("{NAME}", target_name)
