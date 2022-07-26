@@ -79,12 +79,12 @@ class AngrAnalysis(AnalysisBackend):
         if name in _libc_decls:
             return True
 
+        # ignore instrumentation
+        # if name.startswith("__"):
+        #    return True
+
         # ignore runtime calls from the binary
         if name in ["_init", "frame_dummy", "call_weak_fn", "$x", "_fini"]:
-            return True
-
-        # ignore instrumentation
-        if name.startswith("__"):
             return True
 
         # if set, ignore all stripped functions for faster analysis

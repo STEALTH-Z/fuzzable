@@ -1,5 +1,7 @@
 # fuzzable
 
+![ci](https://github.com/ex0dus-0x/fuzzable/actions/workflows/main.yml/badge.svg)
+
 Framework for Automating _Fuzzable_ Target Discovery with Static Analysis
 
 ## Introduction
@@ -10,9 +12,14 @@ __Fuzzable__ is a framework that integrates both with C/C++ source code and bina
 
 In addition to running as a standalone tool, Fuzzable is also integrated as a plugin for Binary Ninja, with support for other disassembly backends being developed.
 
-Check out the blog post detailing the plugin [here](https://codemuch.tech/2021/06/07/fuzzabble/).
+Check out the very original blog post detailing the plugin [here](https://codemuch.tech/2021/06/07/fuzzabble/). This tool will also be featured at [Blackhat Arsenal USA 2022](https://www.blackhat.com/us-22/arsenal/schedule/index.html#automating-fuzzable-target-discovery-with-static-analysis-26726).
 
 ## Features
+
+* Supports analyzing __binaries__ (with [Angr](https://angr.io) and [Binary Ninja](https://binary.ninja)) and
+__source code__ artifacts (with [tree-sitter](https://tree-sitter.github.io/tree-sitter/)).
+* Run static analysis both as a __standalone CLI tool__ or a __Binary Ninja plugin__.
+* __Harness generation__ to ramp up on creating fuzzing campaigns quickly.
 
 ## Usage
 

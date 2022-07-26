@@ -154,9 +154,9 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         """
 
         # ignore targets with patterns that denote some type of profiling instrumentation, ie stack canary
-        if name.startswith("__"):
-            log.log_debug(f"{name} is potentially instrumentation, skipping")
-            return True
+        # if name.startswith("__"):
+        #    log.log_debug(f"{name} is potentially instrumentation, skipping")
+        #    return True
 
         # if set, ignore all stripped functions for faster analysis
         # if ("sub_" in name) and Settings().get_bool("fuzzable.skip_stripped"):

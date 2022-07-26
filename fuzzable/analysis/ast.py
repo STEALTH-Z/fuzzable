@@ -13,6 +13,7 @@ from tree_sitter import Language, Node, Parser
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
 
+# Compiled shared object for language support
 BUILD_PATH = "build/lang.so"
 
 FORMAT = "%(message)s"

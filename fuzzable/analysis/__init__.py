@@ -57,16 +57,6 @@ class AnalysisBackend(abc.ABC):
         """
         pass
 
-    @staticmethod
-    def _normalize(lst: t.List[int]) -> t.List[int]:
-        xmin = min(lst)
-        xmax = max(lst)
-        for i, x in enumerate(lst):
-            if (xmax - xmin) != 0:
-                lst[i] = (x - xmin) / (xmax - xmin)
-
-        return lst
-
     def _rank_fuzzability(self, unranked: t.List[CallScore]) -> Fuzzability:
         """
         After analyzing each function call, use scikit-criteria to rank based on the call score
@@ -145,6 +135,16 @@ class AnalysisBackend(abc.ABC):
             score.cyclomatic_complexity = new_cc
 
         return sorted(unranked, key=lambda x: x.simple_fuzzability, reverse=True)
+
+    @staticmethod
+    def _normalize(lst: t.List[int]) -> t.List[int]:
+        xmin = min(lst)
+        xmax = max(lst)
+        for i, x in enumerate(lst):
+            if (xmax - xmin) != 0:
+                lst[i] = (x - xmin) / (xmax - xmin)
+
+        return lst
 
     @abc.abstractmethod
     def analyze_call(self, name: str, func: t.Any) -> CallScore:

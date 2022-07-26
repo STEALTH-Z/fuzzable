@@ -41,7 +41,7 @@ def analyze(
     ),
     list_ignored: bool = typer.Option(
         False,
-        help="If set, will also additionally output or export ignored symbols.",
+        help="If set, will also additionally output and/or export ignored symbols.",
     ),
     debug: bool = typer.Option(
         False,
