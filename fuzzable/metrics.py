@@ -6,7 +6,7 @@ metrics.py
 import functools
 import typing as t
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -48,8 +48,8 @@ class CallScore:
     coverage_depth: int
 
     # mutable values that are to be set after analysis
-    _final_rank: int = 0
-    _final_score: float = 0.0
+    _final_rank: int = field(init=False, repr=False)
+    _final_score: float = field(init=False, repr=False)
 
     """
     Getters and setters for calculated rank and score
@@ -60,15 +60,15 @@ class CallScore:
         """Rank of an individual function in a list of parsed functions"""
         return self._final_rank
 
-    @property
-    def score(self) -> float:
-        """Final calculated fuzzability score based on metrics"""
-        return self._final_score
-
     @rank.setter
     def rank(self, to_set: int) -> None:
         """Call to set the rank after analysis and ranking"""
         self._final_rank = to_set
+
+    @property
+    def score(self) -> float:
+        """Final calculated fuzzability score based on metrics"""
+        return self._final_score
 
     @score.setter
     def score(self, to_set: float) -> float:

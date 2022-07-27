@@ -1,4 +1,4 @@
-# fuzzable
+# Fuzzable
 
 ![ci](https://github.com/ex0dus-0x/fuzzable/actions/workflows/main.yml/badge.svg)
 

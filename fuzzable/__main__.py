@@ -56,7 +56,7 @@ def analyze(
 
     try:
         mode = AnalysisMode[mode.upper()]
-    except Exception:
+    except KeyError:
         error(f"Invalid analysis mode `{mode}`. Must either be `recommend` or `rank`.")
 
     log.info(f"Starting fuzzable on {target}")
@@ -86,7 +86,7 @@ def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> N
             analyzer = BinjaAnalysis(bv, mode, headless=True)
 
         # didn't work, try to load angr as a fallback instead
-        except Exception:
+        except ModuleNotFoundError:
             log.warning(
                 f"Cannot load Binary Ninja as a backend. Attempting to load angr instead."
             )
@@ -96,7 +96,7 @@ def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> N
 
                 proj = angr.Project(target, load_options={"auto_load_libs": False})
                 analyzer = AngrAnalysis(proj, mode)
-            except Exception as err:
+            except ModuleNotFoundError as err:
                 error(f"Unsupported target {target}. Reason: {err}")
 
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
