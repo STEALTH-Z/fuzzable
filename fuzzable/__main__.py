@@ -86,7 +86,7 @@ def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> N
             analyzer = BinjaAnalysis(bv, mode, headless=True)
 
         # didn't work, try to load angr as a fallback instead
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, RuntimeError):
             log.warning(
                 f"Cannot load Binary Ninja as a backend. Attempting to load angr instead."
             )
