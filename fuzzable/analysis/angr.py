@@ -7,14 +7,17 @@ import angr
 from angr.knowledge_plugins.functions.function import Function
 from angr.procedures.definitions.glibc import _libc_decls
 
+from pathlib import Path
+
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
 from ..log import log
 
 # TODO: inherit angr.Analysis
 class AngrAnalysis(AnalysisBackend):
-    def __init__(self, target: angr.Project, mode: AnalysisMode):
-        super().__init__(target, mode)
+    def __init__(self, target: Path, mode: AnalysisMode):
+        project = angr.Project(target, load_options={"auto_load_libs": False})
+        super().__init__(project, mode)
 
         log.debug("Doing initial CFG analysis on target")
         self.cfg = self.target.analyses.CFGFast()

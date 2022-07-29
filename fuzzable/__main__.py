@@ -91,11 +91,9 @@ def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> N
                 f"Cannot load Binary Ninja as a backend. Attempting to load angr instead."
             )
             try:
-                import angr
                 from fuzzable.analysis.angr import AngrAnalysis
 
-                proj = angr.Project(target, load_options={"auto_load_libs": False})
-                analyzer = AngrAnalysis(proj, mode)
+                analyzer = AngrAnalysis(target, mode)
             except ModuleNotFoundError as err:
                 error(f"Unsupported target {target}. Reason: {err}")
 
