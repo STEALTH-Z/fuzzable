@@ -66,7 +66,7 @@ class AstAnalysis(AnalysisBackend):
             # log.trace(tree.root_node.sexp())
 
             # TODO: skip out on `static` calls
-            log.debug(f"{filename} - grabing function definitions")
+            log.debug(f"{filename} - grabbing function definitions")
             query = self.language.query(
                 """
             (function_definition) @capture

@@ -161,6 +161,5 @@ def create_harness(
     log.info("Done!")
 
 
-# TOOD list-functions
 # TODO generate-callgraph
 # TODO reference-cve

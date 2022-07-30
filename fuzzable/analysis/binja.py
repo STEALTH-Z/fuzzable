@@ -16,7 +16,7 @@ import binaryninja.interaction as interaction
 from binaryninja import BinaryView
 from binaryninja.function import Function
 from binaryninja.lowlevelil import LowLevelILReg
-from binaryninja.enums import LowLevelILOperation
+from binaryninja.enums import LowLevelILOperation, SymbolType
 from binaryninja.plugin import BackgroundTaskThread
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
@@ -53,18 +53,11 @@ class BinjaAnalysis(
         for func in funcs:
             name = func.name
 
-            # manually deal with GOT/PLT resolving, where we'll just
-            # adopt the call as ourselves if its a tailcall
-            # TODO: make betterrrr
-            # if len(func.callees) == 1:
-            #    if func.callees[0].name == name:
-            #        func = func.callees[0]
-
             # if name in self.visited:
             #    continue
-            self.visited += [name]
+            # self.visited += [name]
 
-            log.log_debug("Checking to see if we should ignore")
+            log.log_debug(f"Checking to see if we should ignore {name}")
             if self.skip_analysis(func):
                 self.skipped += 1
                 continue
@@ -140,7 +133,6 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         symbol = func.symbol.type
         log.log_debug(f"{name} - {symbol}")
 
-        """
         # ignore imported functions from other libraries, ie glibc or win32api
         if symbol in [
             SymbolType.ImportedFunctionSymbol,
@@ -151,7 +143,6 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
         ]:
             log.log_debug(f"{name} is an import, skipping")
             return True
-        """
 
         # ignore targets with patterns that denote some type of profiling instrumentation, ie stack canary
         # if name.startswith("__"):
