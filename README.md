@@ -88,31 +88,6 @@ $ poetry install
 $ poetry shell
 ```
 
-## Settings
-
-By default, __fuzzable__ will attempt to make intelligent decisions on which functions it should present
-back to you, and thus will ignore calls from analysis and showing up in the report.
-
-Given how diverse binaries are, the plugin provides several settings one may choose to tweak for different targets:
-
-* `depth_threshold`
-
-Minimum number of levels in callgraph to be considered optimal for fuzzing.
-
-Functions that automatically have a callgraph depth of >100 will be marked as fuzzable. However, this may be unnecessary in smaller/less
-complex binaries, or those that employing inlining.
-
-* `loop_increase_score`
-
-Don't include natural loop as part of the fuzzability score.
-
-The presence of natural loops are incorporated as part of the fuzzability score, since they may denote some form of scanning/parsing
-behavior that is worthy to analyze. Turn off if it generates a lot of false positives.
-
-* `skip_stripped`
-
-Ignore including functions that are stripped as part of the final results.
-
 ## License
 
 Fuzzable is licensed under the [MIT License](https://codemuch.tech/license.txt).
