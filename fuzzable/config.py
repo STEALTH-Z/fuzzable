@@ -6,8 +6,14 @@ config.py
 """
 import typing as t
 
+from os.path import dirname, abspath
+
+# Top level directory for project
+ROOT_DIR = dirname(dirname(abspath(__file__)))
+
 # Supported source code paths
-SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".h", ".hpp", ".hh"]
+# TODO: we should do a very initial parse on the file to determine if it is C++ source
+SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".cp" ".cxx", ".h", ".hpp", ".hh"]
 
 # Source file patterns to ignore unless turned off
 SOURCE_IGNORE = ["test", "example"]

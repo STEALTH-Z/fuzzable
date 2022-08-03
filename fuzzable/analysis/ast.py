@@ -12,9 +12,9 @@ from tree_sitter import Language, Node, Parser
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
 from ..log import log
+from ..config import ROOT_DIR
 
 # Compiled shared object for language support
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILD_PATH = os.path.join(ROOT_DIR, "build/lang.so")
 
 
