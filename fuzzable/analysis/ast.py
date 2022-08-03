@@ -7,21 +7,24 @@ ast.py
 import os
 import typing as t
 
+from pathlib import Path
 from tree_sitter import Language, Node, Parser
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
 from ..log import log
-from ..config import ROOT_DIR
+from ..config import ROOT_DIR, SOURCE_FILE_EXTS
 
 # Compiled shared object for language support
 BUILD_PATH = os.path.join(ROOT_DIR, "build/lang.so")
 
 
 class AstAnalysis(AnalysisBackend):
-    """Derived class to support parsing C/C++ ASTs with pycparser"""
+    """Derived class to support parsing C/C++ ASTs with tree-sitter"""
 
-    def __init__(self, target: t.List[str], mode: AnalysisMode):
+    def __init__(
+        self, target: t.List[str], mode: AnalysisMode, basedir: t.Optional[Path] = None
+    ):
         super().__init__(target, mode)
 
         log.debug("Building third-party tree-sitter libraries for C/C++ languages")
@@ -35,6 +38,9 @@ class AstAnalysis(AnalysisBackend):
         self.language = Language(BUILD_PATH, "c")
         self.parser = Parser()
 
+        # workplace to eventually strip from location
+        self.basedir: t.Optional[Path] = basedir
+
         # store mapping between filenames and their raw contents and function AST node
         self.parsed_symbols: t.Dict[str, t.Tuple[Node, bytes]] = {}
 
@@ -47,12 +53,30 @@ class AstAnalysis(AnalysisBackend):
     def run(self) -> Fuzzability:
         """
         This runs on two passes:
+
+            - an initial run to parse and map every single function AST object
+            from the source codebase to their appropriate files
+            - the actual run to conduct static analysis on each function's AST
         """
 
         # first collect ASTs for every function
+        log.info("Collecting and parsing ASTs for each function call")
         for filename in self.target:
+
+            # fix up path if a basedir is present
+            if self.basedir:
+                filepath = filename.relative_to(self.basedir)
+            else:
+                filepath = filename
+
+            # if recommend mode, ignore all unit tests
+            if self.mode == AnalysisMode.RECOMMEND and "test" in str(filepath).lower():
+                log.info(f"{filepath} - skipping as it's a potential unit test file")
+                continue
+
             # switch over language if different language detected
-            if filename.suffix in [".cpp", ".cc", ".hpp", ".hh"]:
+            extension = filepath.suffix
+            if extension in SOURCE_FILE_EXTS[1:]:
                 self.language = Language(BUILD_PATH, "cpp")
             else:
                 self.language = Language(BUILD_PATH, "c")
@@ -63,22 +87,24 @@ class AstAnalysis(AnalysisBackend):
                 contents = source_file.read()
 
             tree = self.parser.parse(contents)
-            # log.trace(tree.root_node.sexp())
+            # log.debug(tree.root_node.sexp())
 
-            # TODO: skip out on `static` calls
-            log.debug(f"{filename} - grabbing function definitions")
+            log.debug(f"{filepath} - grabbing function definitions")
             query = self.language.query(
                 """
             (function_definition) @capture
             """
             )
 
+            # TODO: skip out on `static` calls if recommend mode
+
             # store mappings for the file
+            log.debug(f"{filepath} - aggregating definition captures")
             captures = [node for (node, _) in query.captures(tree.root_node)]
-            self.parsed_symbols[str(filename)] = (captures, contents)
+            self.parsed_symbols[filepath] = (captures, contents)
 
         # now analyze each function_definition node
-        log.debug("Iterating over symbols in all files")
+        log.info("Statically analyzing and calculating fuzzability for each call")
         for filename, entry in self.parsed_symbols.items():
             nodes = entry[0]
             contents = entry[1]

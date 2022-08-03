@@ -88,6 +88,12 @@ $ poetry install
 $ poetry shell
 ```
 
+## Settings
+
+### Ignorelist
+
+By default, __fuzzable__ ignores
+
 ## License
 
 Fuzzable is licensed under the [MIT License](https://codemuch.tech/license.txt).

@@ -39,10 +39,6 @@ def analyze(
         help="Export the fuzzability report based on the file extension."
         "Fuzzable supports either a raw CSV (.csv) file or Markdown.",
     ),
-    list_ignored: bool = typer.Option(
-        False,
-        help="If set, will also additionally output and/or export ignored symbols.",
-    ),
     debug: bool = typer.Option(
         False,
         help="If set, will be verbose and output debug information.",
@@ -71,11 +67,13 @@ def analyze(
 def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> None:
     """Runs analysis on a single source code file or binary file."""
     analyzer: t.TypeVar[AnalysisBackend]
-    if target.suffix in SOURCE_FILE_EXTS:
+
+    extension = target.suffix
+    if extension in SOURCE_FILE_EXTS:
         analyzer = AstAnalysis([target], mode)
     else:
 
-        # prioritize loading binja as a backend, this may not
+        # Prioritize loading binja as a backend, this may not
         # work if the license is personal/student.
         try:
             from binaryninja.binaryview import BinaryViewType
@@ -121,7 +119,7 @@ def run_on_workspace(
             "No C/C++ source code found in the workspace. fuzzable currently does not support parsing on workspaces with multiple binaries."
         )
 
-    analyzer = AstAnalysis(source_files, mode)
+    analyzer = AstAnalysis(source_files, mode, basedir=target)
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
     print_table(target, results, analyzer.skipped)

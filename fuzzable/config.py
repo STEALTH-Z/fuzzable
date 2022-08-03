@@ -16,7 +16,7 @@ ROOT_DIR = dirname(dirname(abspath(__file__)))
 SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".cp" ".cxx", ".h", ".hpp", ".hh"]
 
 # Source file patterns to ignore unless turned off
-SOURCE_IGNORE = ["test", "example"]
+SOURCE_IGNORE: t.List[str] = ["test", "example"]
 
 # Interesting symbol name patterns to check for fuzzable
 INTERESTING_PATTERNS: t.List[str] = [
