@@ -23,7 +23,7 @@ __source code__ artifacts (with [tree-sitter](https://tree-sitter.github.io/tree
 * Run static analysis both as a __standalone CLI tool__ or a __Binary Ninja plugin__.
 * __Harness generation__ to ramp up on creating fuzzing campaigns quickly.
 
-## Usage
+## Installation
 
 Some binary targets may require some sanitizing (ie. signature matching, or identifying functions from inlining), and therefore 
 __fuzzable__ primarily uses Binary Ninja as a disassembly backend because of it's ability to effectively solve these problems. Therefore, it can be utilized both as a standalone tool and plugin.
@@ -88,11 +88,41 @@ $ poetry install
 $ poetry shell
 ```
 
-## Settings
+## Usage
 
-### Ignorelist
+### Analysis Mode
 
-By default, __fuzzable__ ignores
+By default, __fuzzable__ will utilize the _recommend_ mode, where many function targets will be filtered out
+from analysis and fuzzability consideration. The following criteria are used when filtering:
+
+* __Top-level entry calls__ - functions that aren't called by any other calls in the target. These are ideal entry points that have potentially have high coverage.
+* __Static calls__ - _(source only)_ functions that are `static` and aren't exposed through headers.
+* __Imports__ - _(binary only)_ function dependencies used by the target.
+
+To see calls that got filtered out by __fuzzable__, set the `--list_ignored` flag:
+
+```
+$ fuzzable analyze --list_ignored <TARGET>
+```
+
+In Binary Ninja, you can turn this setting in `Settings > Fuzzable > List Ignored Calls`.
+
+In the case that __fuzzable__ falsely filters out important calls that should be analyzed, it is recommended
+to switching to the more comprehensive _ranking_ mode, where all calls will be considered for analysis indiscriminately. This can be turned on as such:
+
+```
+$ fuzzable analyze --mode=rank <TARGET>
+```
+
+In Binary Ninja, this is supported by selecting `Plugins > Fuzzable > Analysis Mode > Rank all Functions by Fuzzability`.
+
+### Score Weights
+
+### Exporting Reports
+
+### Disassembly Helpers
+
+_(Binary Ninja Only)_
 
 ## License
 

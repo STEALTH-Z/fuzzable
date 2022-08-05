@@ -13,7 +13,7 @@ import lief
 from rich import print
 
 from fuzzable import generate
-from fuzzable.config import SOURCE_FILE_EXTS, SOURCE_IGNORE
+from fuzzable.config import SOURCE_FILE_EXTS
 from fuzzable.cli import print_table, error
 from fuzzable.analysis import AnalysisBackend, AnalysisMode
 from fuzzable.analysis.ast import AstAnalysis
@@ -37,7 +37,11 @@ def analyze(
     export: t.Optional[str] = typer.Option(
         None,
         help="Export the fuzzability report based on the file extension."
-        "Fuzzable supports either a raw CSV (.csv) file or Markdown.",
+        "Fuzzable supports exporting to `json`, `csv`, or `md`.",
+    ),
+    list_ignored: bool = typer.Option(
+        False,
+        help="If set, will also additionally output and/or export ignored symbols.",
     ),
     debug: bool = typer.Option(
         False,
@@ -55,16 +59,25 @@ def analyze(
     except KeyError:
         error(f"Invalid analysis mode `{mode}`. Must either be `recommend` or `rank`.")
 
+    if mode == AnalysisMode.RANK and list_ignored:
+        error("--list_ignored is not needed for `rank`ing mode.")
+
+    if export is not None:
+        if export.lower() not in ["json", "csv", "md"]:
+            error("--export value must either be `json`, `csv`, or `md`.")
+
     log.info(f"Starting fuzzable on {target}")
     if target.is_file():
-        run_on_file(target, mode, export)
+        run_on_file(target, mode, export, list_ignored)
     elif target.is_dir():
-        run_on_workspace(target, mode, export)
+        run_on_workspace(target, mode, export, list_ignored)
     else:
         error(f"Target path `{target}` does not exist")
 
 
-def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> None:
+def run_on_file(
+    target: Path, mode: AnalysisMode, export: t.Optional[Path], list_ignored: bool
+) -> None:
     """Runs analysis on a single source code file or binary file."""
     analyzer: t.TypeVar[AnalysisBackend]
 
@@ -101,7 +114,10 @@ def run_on_file(target: Path, mode: AnalysisMode, export: t.Optional[Path]) -> N
 
 
 def run_on_workspace(
-    target: Path, mode: AnalysisMode, export: t.Optional[Path]
+    target: Path,
+    mode: AnalysisMode,
+    export: t.Optional[Path],
+    list_ignored: bool,
 ) -> None:
     """
     Given a workspace, recursively iterate and parse out all of the source code files
@@ -123,6 +139,10 @@ def run_on_workspace(
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
     print_table(target, results, analyzer.skipped)
+
+
+def export_report(export: str):
+    return None
 
 
 @app.command()

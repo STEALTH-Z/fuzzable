@@ -11,12 +11,9 @@ from os.path import dirname, abspath
 # Top level directory for project
 ROOT_DIR = dirname(dirname(abspath(__file__)))
 
-# Supported source code paths
+# Supported C/C++ source code extensions
 # TODO: we should do a very initial parse on the file to determine if it is C++ source
 SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".cp" ".cxx", ".h", ".hpp", ".hh"]
-
-# Source file patterns to ignore unless turned off
-SOURCE_IGNORE: t.List[str] = ["test", "example"]
 
 # Interesting symbol name patterns to check for fuzzable
 INTERESTING_PATTERNS: t.List[str] = [
@@ -32,7 +29,8 @@ INTERESTING_PATTERNS: t.List[str] = [
     "decode",
 ]
 
-# Function name patterns that include known
+# Function name patterns that include INTERESTING_PATTERNS but
+# may not be very useful/interesting to us
 FALSE_POSITIVE_SIMILARS: t.List[str] = [
     # str
     "destroy"
