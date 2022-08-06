@@ -14,7 +14,7 @@ from rich import print
 
 from fuzzable import generate
 from fuzzable.config import SOURCE_FILE_EXTS
-from fuzzable.cli import print_table, error
+from fuzzable.cli import print_table, error, export_results
 from fuzzable.analysis import AnalysisBackend, AnalysisMode
 from fuzzable.analysis.ast import AstAnalysis
 from fuzzable.log import log
@@ -34,7 +34,7 @@ def analyze(
         help="Analysis mode to run under (either `recommend` or `rank`, default is `recommend`)."
         "See documentation for more details about which to select.",
     ),
-    export: t.Optional[str] = typer.Option(
+    export: t.Optional[Path] = typer.Option(
         None,
         help="Export the fuzzability report based on the file extension."
         "Fuzzable supports exporting to `json`, `csv`, or `md`.",
@@ -63,8 +63,9 @@ def analyze(
         error("--list_ignored is not needed for `rank`ing mode.")
 
     if export is not None:
-        if export.lower() not in ["json", "csv", "md"]:
-            error("--export value must either be `json`, `csv`, or `md`.")
+        ext = export.suffix.lower()
+        if ext not in [".json", ".csv", ".md"]:
+            error("--export value must either have `json`, `csv`, or `md` extensions.")
 
     log.info(f"Starting fuzzable on {target}")
     if target.is_file():
@@ -111,6 +112,8 @@ def run_on_file(
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
     print_table(target, results, analyzer.skipped)
+    if export:
+        export_results(export, results)
 
 
 def run_on_workspace(
@@ -139,10 +142,8 @@ def run_on_workspace(
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
     print_table(target, results, analyzer.skipped)
-
-
-def export_report(export: str):
-    return None
+    if export:
+        export_results(export, results)
 
 
 @app.command()

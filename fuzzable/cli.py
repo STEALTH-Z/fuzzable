@@ -4,6 +4,7 @@ cli.py
     Utilities for printing things to the UI
 """
 import sys
+import json
 import typer
 
 from rich import print
@@ -70,3 +71,18 @@ def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
     print(f"[underline]Number of Symbols Analyzed[/underline]: \t\t{len(fuzzability)}")
     print(f"[underline]Number of Symbols Skipped[/underline]: \t\t{skipped}")
     print(f"[underline]Top Fuzzing Contender[/underline]: \t\t{fuzzability[0].name}\n")
+
+
+def export_results(export, results) -> None:
+    writer = open(export, "w")
+    ext = export.suffix
+    if ext == ".json":
+        writer.write(json.dumps([res.asdict() for res in results]))
+    elif ext == ".csv":
+        writer.write(CSV_HEADER)
+        for res in results:
+            writer.write(res.csv_row)
+    elif ext == ".md":
+        pass
+
+    writer.close()

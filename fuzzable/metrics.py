@@ -3,10 +3,11 @@ metrics.py
 
     Dataclass definitions for various metrics collected during qthe risk analysis.
 """
+import json
 import functools
 import typing as t
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 
 
 @dataclass
@@ -63,7 +64,7 @@ class CallScore:
     @rank.setter
     def rank(self, to_set: int) -> None:
         """Call to set the rank after analysis and ranking"""
-        self._final_rank = to_set
+        self._final_rank = float(to_set)
 
     @property
     def score(self) -> float:
@@ -71,9 +72,9 @@ class CallScore:
         return self._final_score
 
     @score.setter
-    def score(self, to_set: float) -> float:
+    def score(self, to_set: float) -> None:
         """Call to set the fuzzability score after analysis and calculation"""
-        self._final_score = to_set
+        self._final_score = float(to_set)
 
     """
     Overloaded operators for sorting
@@ -91,6 +92,9 @@ class CallScore:
     """
     Properties to export score into flat structures
     """
+
+    def asdict(self) -> t.Dict[str, t.Any]:
+        return asdict(self)
 
     @property
     def matrix_row(self) -> t.List[int]:
