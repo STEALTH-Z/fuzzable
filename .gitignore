@@ -9,3 +9,6 @@ dist/
 
 *.pyc
 .DS_Store
+
+*.json
+*.csv
