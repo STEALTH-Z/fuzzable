@@ -46,7 +46,9 @@ def error(string: str) -> None:
     sys.exit(1)
 
 
-def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
+def print_table(
+    target: Path, fuzzability: Fuzzability, skipped: int, list_ignored: bool
+) -> None:
     """Pretty-prints fuzzability results for the CLI"""
     table = Table(title=f"\nFuzzable Report for Target `{target}`")
     for column in COLUMNS:
@@ -72,6 +74,9 @@ def print_table(target: Path, fuzzability: Fuzzability, skipped: int) -> None:
     print(f"[underline]Number of Symbols Skipped[/underline]: \t\t{skipped}")
     print(f"[underline]Top Fuzzing Contender[/underline]: \t\t{fuzzability[0].name}\n")
 
+    if list_ignored:
+        print("\n[bold red]SKIPPED SYMBOLS[/bold red]\n")
+
 
 def export_results(export, results) -> None:
     writer = open(export, "w")
@@ -79,10 +84,11 @@ def export_results(export, results) -> None:
     if ext == ".json":
         writer.write(json.dumps([res.asdict() for res in results]))
     elif ext == ".csv":
-        writer.write(CSV_HEADER)
+        writer.write(CSV_HEADER.replace('"', ""))
         for res in results:
             writer.write(res.csv_row)
     elif ext == ".md":
         pass
 
+    print(f"Written fuzzability results to `{export}`!")
     writer.close()

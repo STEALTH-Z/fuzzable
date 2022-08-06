@@ -111,7 +111,7 @@ def run_on_file(
 
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
-    print_table(target, results, analyzer.skipped)
+    print_table(target, results, analyzer.skipped, list_ignored)
     if export:
         export_results(export, results)
 
@@ -141,7 +141,7 @@ def run_on_workspace(
     analyzer = AstAnalysis(source_files, mode, basedir=target)
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
-    print_table(target, results, analyzer.skipped)
+    print_table(target, results, analyzer.skipped, list_ignored)
     if export:
         export_results(export, results)
 
