@@ -9,16 +9,15 @@ from binaryninja.settings import Settings
 
 from .fuzzable.analysis import binja
 
-# configurable settings to tune
 Settings().register_group("fuzzable", "Fuzzable")
 Settings().register_setting(
-    "fuzzable.depth_threshold",
+    "fuzzable.list_ignored",
     """
     {
-        "title"         : "Callgraph depth threshold",
-        "description"   : "Minimum number of levels in callgraph to be considered optimal for fuzzing.",
-        "type"          : "string",
-        "default"       : "100"
+        "title"         : "List Ignored Symbols",
+        "description"   : "Include the symbols that we've ignored using `recommend` mode.",
+        "type"          : "bool",
+        "default"       : "false"
     }
 """,
 )

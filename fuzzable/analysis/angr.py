@@ -36,7 +36,7 @@ class AngrAnalysis(AnalysisBackend):
 
             if self.skip_analysis(func):
                 log.warning(f"Skipping {name} from fuzzability analysis.")
-                self.skipped += 1
+                self.skipped[name] = str(hex(func.addr))
                 continue
 
             # if recommend mode, filter and run only those that are top-level

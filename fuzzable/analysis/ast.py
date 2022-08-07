@@ -140,7 +140,7 @@ class AstAnalysis(AnalysisBackend):
 
                 log.debug(f"{filename} - checking if we should skip analysis for node")
                 if self.skip_analysis(name):
-                    self.skipped += 1
+                    self.skipped[name] = f"{filename}:{node.start_point[0]}"
                     log.debug(f"{filename} - skipping over this one")
                     continue
 
@@ -150,7 +150,7 @@ class AstAnalysis(AnalysisBackend):
                     log.debug(
                         f"{filename} - skipping over node, since it's not top-level for recommended mode"
                     )
-                    self.skipped += 1
+                    self.skipped[name] = f"{filename}:{node.start_point[0]}"
                     continue
 
                 log.debug(f"{filename} - analyzing function target {name}")

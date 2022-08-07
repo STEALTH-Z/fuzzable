@@ -40,8 +40,8 @@ class AnalysisBackend(abc.ABC):
         self.target = target
         self.mode = mode
 
-        # number of functions not analyzed
-        self.skipped: int = 0
+        # mapping of functions + locations we've chosen to skipped
+        self.skipped: t.Dict[str, str] = {}
 
         # stores all the scores we've measured from the functions
         self.scores: t.List[t.Any] = []

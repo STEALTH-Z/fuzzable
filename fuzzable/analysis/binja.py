@@ -18,6 +18,7 @@ from binaryninja.function import Function
 from binaryninja.lowlevelil import LowLevelILReg
 from binaryninja.enums import LowLevelILOperation, SymbolType
 from binaryninja.plugin import BackgroundTaskThread
+from binaryninja.settings import Settings
 
 from . import AnalysisBackend, AnalysisMode, Fuzzability
 from ..metrics import CallScore
@@ -59,7 +60,7 @@ class BinjaAnalysis(
 
             log.log_debug(f"Checking to see if we should ignore {name}")
             if self.skip_analysis(func):
-                self.skipped += 1
+                self.skipped[name] = str(hex(func.address_ranges[0].start))
                 continue
 
             # if recommend mode, filter and run only those that are top-level
@@ -99,6 +100,9 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
             for score in ranked:
                 markdown_result += score.binja_markdown_row
                 csv_result += score.csv_row
+
+            if Settings().get_bool("fuzzable.list_ignored"):
+                pass
 
             log.log_info("Saving to memory and displaying finalized results...")
             self.view.store_metadata("csv", csv_result)

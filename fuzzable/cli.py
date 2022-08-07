@@ -6,12 +6,14 @@ cli.py
 import sys
 import json
 import typer
+import typing as t
 
 from rich import print
 from rich.console import Console
 from rich.table import Table
 
 from .analysis import Fuzzability
+from .log import log
 
 from pathlib import Path
 
@@ -47,7 +49,10 @@ def error(string: str) -> None:
 
 
 def print_table(
-    target: Path, fuzzability: Fuzzability, skipped: int, list_ignored: bool
+    target: Path,
+    fuzzability: Fuzzability,
+    skipped: t.Dict[str, str],
+    list_ignored: bool,
 ) -> None:
     """Pretty-prints fuzzability results for the CLI"""
     table = Table(title=f"\nFuzzable Report for Target `{target}`")
@@ -71,11 +76,14 @@ def print_table(
 
     print("\n[bold red]ADDITIONAL METADATA[/bold red]\n")
     print(f"[underline]Number of Symbols Analyzed[/underline]: \t\t{len(fuzzability)}")
-    print(f"[underline]Number of Symbols Skipped[/underline]: \t\t{skipped}")
+    print(f"[underline]Number of Symbols Skipped[/underline]: \t\t{len(skipped)}")
     print(f"[underline]Top Fuzzing Contender[/underline]: \t\t{fuzzability[0].name}\n")
 
     if list_ignored:
         print("\n[bold red]SKIPPED SYMBOLS[/bold red]\n")
+        for name, loc in skipped.items():
+            print(f"{name}\t\t{loc}")
+        print("\n")
 
 
 def export_results(export, results) -> None:
@@ -90,5 +98,5 @@ def export_results(export, results) -> None:
     elif ext == ".md":
         pass
 
-    print(f"Written fuzzability results to `{export}`!")
+    log.info(f"Written fuzzability results to `{export}`!")
     writer.close()
