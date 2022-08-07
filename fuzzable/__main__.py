@@ -43,6 +43,10 @@ def analyze(
         False,
         help="If set, will also additionally output and/or export ignored symbols.",
     ),
+    score_weights: t.List[float] = typer.Option(
+        [0.3, 0.3, 0.05, 0.05, 0.3],
+        help="Reconfigure the weights for MCDA when determining fuzzability.",
+    ),
     debug: bool = typer.Option(
         False,
         help="If set, will be verbose and output debug information.",
@@ -69,22 +73,26 @@ def analyze(
 
     log.info(f"Starting fuzzable on {target}")
     if target.is_file():
-        run_on_file(target, mode, export, list_ignored)
+        run_on_file(target, mode, score_weights, export, list_ignored)
     elif target.is_dir():
-        run_on_workspace(target, mode, export, list_ignored)
+        run_on_workspace(target, mode, score_weights, export, list_ignored)
     else:
         error(f"Target path `{target}` does not exist")
 
 
 def run_on_file(
-    target: Path, mode: AnalysisMode, export: t.Optional[Path], list_ignored: bool
+    target: Path,
+    mode: AnalysisMode,
+    score_weights: t.List[float],
+    export: t.Optional[Path],
+    list_ignored: bool,
 ) -> None:
     """Runs analysis on a single source code file or binary file."""
     analyzer: t.TypeVar[AnalysisBackend]
 
     extension = target.suffix
     if extension in SOURCE_FILE_EXTS:
-        analyzer = AstAnalysis([target], mode)
+        analyzer = AstAnalysis([target], mode, score_weights=score_weights)
     else:
 
         # Prioritize loading binja as a backend, this may not
@@ -95,7 +103,9 @@ def run_on_file(
 
             bv = BinaryViewType.get_view_of_file(target)
             bv.update_analysis_and_wait()
-            analyzer = BinjaAnalysis(bv, mode, headless=True)
+            analyzer = BinjaAnalysis(
+                bv, mode, headless=True, score_weight=score_weights
+            )
 
         # didn't work, try to load angr as a fallback instead
         except (ModuleNotFoundError, RuntimeError):
@@ -119,6 +129,7 @@ def run_on_file(
 def run_on_workspace(
     target: Path,
     mode: AnalysisMode,
+    score_weights: t.List[float],
     export: t.Optional[Path],
     list_ignored: bool,
 ) -> None:
@@ -138,7 +149,9 @@ def run_on_workspace(
             "No C/C++ source code found in the workspace. fuzzable currently does not support parsing on workspaces with multiple binaries."
         )
 
-    analyzer = AstAnalysis(source_files, mode, basedir=target)
+    analyzer = AstAnalysis(
+        source_files, mode, basedir=target, score_weights=score_weights
+    )
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
     print_table(target, results, analyzer.skipped, list_ignored)

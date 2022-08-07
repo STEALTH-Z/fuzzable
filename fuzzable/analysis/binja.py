@@ -87,7 +87,7 @@ are incomplete, wait for Binary Ninja's initial analysis to finalize and re-run 
 
 __Number of Symbols Analyzed:__ {len(ranked)}
 
-__Number of Symbols Skipped:__ {self.skipped}
+__Number of Symbols Skipped:__ {len(self.skipped)}
 
 __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].name})
 
@@ -155,7 +155,7 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
         # if set, ignore all stripped functions for faster analysis
         # if ("sub_" in name) and Settings().get_bool("fuzzable.skip_stripped"):
-        if "sub_" in name:
+        if "sub_" in name and self.mode == AnalysisMode.RECOMMEND:
             log.log_debug(f"{name} is stripped, skipping")
             return True
 
@@ -280,10 +280,26 @@ def run_export_csv(view: BinaryView) -> None:
     csv_file = csv_file.decode("utf-8") + ".csv"
 
     log.log_info(f"Writing to filepath {csv_file}")
-    with open(csv_file, "w+", encoding="utf-8") as csv_file:
-        csv_file.write(csv_output)
+    with open(csv_file, "w+", encoding="utf-8") as csv_fd:
+        csv_fd.write(csv_output)
 
     interaction.show_message_box("Success", f"Done, exported to {csv_file}")
+
+
+def run_export_json(view: BinaryView) -> None:
+    """Generate a JSON report from a previous analysis"""
+    log.log_info("Attempting to export results to JSON")
+
+    json_file = interaction.get_save_filename_input(
+        "Filename to export as JSON?", "json"
+    )
+    json_file = json_file.decode("utf-8") + ".csv"
+
+    log.log_info(f"Writing to filepath {json_file}")
+    with open(json_file, "w+", encoding="utf-8") as json_fd:
+        json_fd.write(csv_output)
+
+    interaction.show_message_box("Success", f"Done, exported to {json_file}")
 
 
 def run_export_md(view: BinaryView) -> None:
@@ -334,7 +350,7 @@ def run_harness_generation(view, func: Function) -> None:
     # harness = harness.decode("utf-8") + ".cpp"
 
     log.log_info(f"Writing harness `{harness}` to workspace")
-    with open(harness, "w+", encoding="utf-8") as harness:
-        harness.write(template)
+    with open(harness, "w+", encoding="utf-8") as harness_fd:
+        harness_fd.write(template)
 
     # interaction.show_message_box("Success", f"Done, wrote fuzzer harness to {harness}")

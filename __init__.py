@@ -42,6 +42,12 @@ PluginCommand.register(
 )
 
 PluginCommand.register(
+    "Fuzzable\\Export Fuzzability Report\\JSON (.json)",
+    "Identify and generate targets for fuzzing",
+    binja.run_export_json,
+)
+
+PluginCommand.register(
     "Fuzzable\\Export Fuzzability Report\\ Markdown (.md)",
     "Identify and generate targets for fuzzing",
     binja.run_export_md,

@@ -36,9 +36,17 @@ class AnalysisMode(enum.Enum):
 class AnalysisBackend(abc.ABC):
     """Base class for analysis backends to implement and detect fuzzable targets."""
 
-    def __init__(self, target: t.Any, mode: AnalysisMode):
+    def __init__(
+        self,
+        target: t.Any,
+        mode: AnalysisMode,
+        score_weights: t.List[float] = [0.3, 0.3, 0.05, 0.05, 0.3],
+    ):
         self.target = target
         self.mode = mode
+
+        # weights of each feature for MCDA
+        self.score_weights = score_weights
 
         # mapping of functions + locations we've chosen to skipped
         self.skipped: t.Dict[str, str] = {}
@@ -92,11 +100,10 @@ class AnalysisBackend(abc.ABC):
         names = [score.name for score in unranked]
 
         objectives = [max, max, max, max, max]
-        weights = [0.3, 0.3, 0.05, 0.05, 0.3]
         decision_matrix = skc.mkdm(
             matrix,
             objectives,
-            weights=weights,
+            weights=self.score_weights,
             alternatives=names,
             criteria=[
                 "fuzz_friendly",
