@@ -40,34 +40,6 @@ If you have Binary Ninja Commercial , be sure to install the API for standalone 
 $ python3 /Applications/Binary\ Ninja.app/Contents/Resources/scripts/install_api.py
 ```
 
-Now install `fuzzable` with `pip`:
-
-```
-$ pip install fuzzable
-```
-
-You can now analyze binaries and/or source code with the tool!
-
-```
-# analyzing a single shared object library binary
-$ fuzzable analyze examples/binaries/libsimple.so.1
-
-# analyzing a single C source file
-$ fuzzable analyze examples/source/libsimple.c
-
-# analyzing a workspace with multiple C/C++ files and headers
-$ fuzzable analyze examples/source/source_bundle/
-```
-
-### Binary Ninja Plugin
-
-__fuzzable__ can be easily installed through the Binary Ninja plugin marketplace by going to `Binary Ninja > Manage Plugins` and searching for it. Here is an example of the __fuzzable__ plugin running on [cesanta/mjs](https://github.com/cesanta/mjs),
-accuracy identifying targets for fuzzing and further vulnerability assessment:
-
-![binja_example](/extras/binja.png "Binary Ninja Example")
-
-### Manual / Development
-
 We use [poetry](https://python-poetry.org) for dependency management and building. To do a manual build, clone the repository with the third-party modules:
 
 ```
@@ -88,6 +60,26 @@ $ poetry install
 # with poetry for a development virtualenv
 $ poetry shell
 ```
+
+You can now analyze binaries and/or source code with the tool!
+
+```
+# analyzing a single shared object library binary
+$ fuzzable analyze examples/binaries/libsimple.so.1
+
+# analyzing a single C source file
+$ fuzzable analyze examples/source/libsimple.c
+
+# analyzing a workspace with multiple C/C++ files and headers
+$ fuzzable analyze examples/source/source_bundle/
+```
+
+### Binary Ninja Plugin
+
+__fuzzable__ can be easily installed through the Binary Ninja plugin marketplace by going to `Binary Ninja > Manage Plugins` and searching for it. Here is an example of the __fuzzable__ plugin running,
+accuracy identifying targets for fuzzing and further vulnerability assessment:
+
+![binja_example](/extras/binja.png "Binary Ninja Example")
 
 ## Usage
 
