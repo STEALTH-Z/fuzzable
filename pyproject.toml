@@ -23,9 +23,6 @@ lief = "^0.12.1"
 tree-sitter = "^0.20.0"
 scikit-criteria = "^0.7"
 
-tree-sitter-c = { path = "./third_party/tree-sitter-c", develop = true }
-tree-sitter-cpp = { path = "./third_party/tree-sitter-cpp", develop = true }
-
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
 black = { version = "^22.6.0", python = "^3.9" }

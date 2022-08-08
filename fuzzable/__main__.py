@@ -177,11 +177,11 @@ def create_harness(
         "",
         help="Names of function symbol to create a fuzzing harness to target. Source not supported yet.",
     ),
-    out_so_name: t.Optional[str] = typer.Option(
+    out_so_name: t.Optional[Path] = typer.Option(
         None,
         help="Specify to set output `.so` path of a transformed ELF binary for binary targets.",
     ),
-    out_harness: t.Optional[str] = typer.Option(
+    out_harness: t.Optional[Path] = typer.Option(
         None, help="Specify to set output harness template file path."
     ),
 ):
@@ -197,9 +197,13 @@ def create_harness(
             "Wrong filetype, or does not support synthesizing harnesses for C/C++ source code yet."
         )
 
+    # resolve paths appropriately
     target = Path(target)
+    out_so_name = out_so_name.expanduser()
+    out_harness = out_harness.expanduser()
+
     log.info(f"Running harness generation for `{target}` on symbol `{symbol_name}`.")
     shared_obj = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
+    generate.generate_harness(shared_obj, symbol_name, output=out_harness)
 
-    generate.generate_harness(shared_obj, symbol_name, harness_path=out_harness)
     log.info("Done!")
