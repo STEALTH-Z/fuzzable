@@ -61,7 +61,10 @@ def generate_harness(
 
 
 def transform_elf_to_so(
-    path: Path, lib: lief.Binary, exports: t.List[str], override_path: t.Optional[Path]
+    path: Path,
+    lib: lief.Binary,
+    export: t.Union[str, int],
+    override_path: t.Optional[Path],
 ) -> t.Optional[Path]:
     """
     Helper that uses LIEF to check if an ELF executable can be transformed into a shared object
@@ -70,20 +73,29 @@ def transform_elf_to_so(
 
     # check if shared object or PIE binary
     # TODO: stronger checks for shared object
+    log.info(f"Checking if {path} needs to be transformed into a shared object")
     if lib.header.file_type is not ELF.E_TYPE.DYNAMIC and ".so" in path.suffix:
         log.info("No need to transform binary into a shared object")
         return path
 
-    for sym in exports:
-        addr = lib.get_function_address(sym)
-        lib.add_exported_function(addr)
+    log.info(f"Attempting to export the symbol in binary {export}")
 
-    path = str(path) + "_exported.so"
+    # if hex addr specified, export address directly and set name
+    if isinstance(export, int):
+        lib.add_exported_function(export, f"sub_{export}")
+
+    # otherwise find the address of the symbol name and export it
+    else:
+        addr = lib.get_function_address(export)
+        lib.add_exported_function(addr, export)
+
+    # override the generated shared object to write to if set
+    path = path.name.split(".")[0] + ".so"
     if override_path:
         path = str(override_path)
 
     log.info(
-        "Transforming the ELF binary into a shared object for harness genaration at {path}"
+        f"Writing the ELF binary into a shared object for harness genaration at {path}"
     )
     lib.write(path)
     return Path(path)

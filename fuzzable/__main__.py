@@ -187,7 +187,7 @@ def create_harness(
 ):
     """Synthesize a AFL++/libFuzzer harness for a given symbol in a target."""
     if not symbol_name:
-        error("No --symbol_name specified.")
+        error("No --symbol-name specified.")
 
     # if a binary, check if executable or library. if executable, use LIEF to
     # copy, export the symbol and transform to shared object.

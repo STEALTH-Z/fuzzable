@@ -110,8 +110,11 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
                 markdown_result += score.binja_markdown_row
                 csv_result += score.csv_row
 
+            # if set include list of ignored symbols
             if Settings().get_bool("fuzzable.list_ignored"):
-                pass
+                markdown_result += "\n## Ignored Symbols\n"
+                for name, loc in self.skipped.items():
+                    markdown_result += f"* [{name}](binaryninja://?expr={loc})"
 
             log.log_info("Saving to memory and displaying finalized results...")
             self.view.store_metadata("csv", csv_result)
@@ -352,7 +355,7 @@ def run_harness_generation(view, func: Function) -> None:
     path = view.file.filename
     binary = lief.parse(path)
 
-    symbol_name = func.name
+    symbol = func.name
     params: t.List[str] = [f"{param.type}" for param in func.parameter_vars.vars]
     return_type = str(func.return_type)
 
@@ -361,10 +364,15 @@ def run_harness_generation(view, func: Function) -> None:
     harness = harness + ".cpp"
 
     log.log_info("Generating harness from template")
-    shared_obj = generate.transform_elf_to_so(Path(path), binary, [symbol_name], None)
+
+    # if stripped, get the address instead as the symbol
+    if "sub_" in symbol:
+        symbol = hex(func.address_ranges[0].start)
+
+    shared_obj = generate.transform_elf_to_so(Path(path), binary, symbol)
     generate.generate_harness(
         shared_obj,
-        symbol_name,
+        symbol,
         return_type=return_type,
         params=params,
         harness_path=template_file,
