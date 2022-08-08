@@ -22,7 +22,9 @@ prettytable = "^3.3.0"
 lief = "^0.12.1"
 tree-sitter = "^0.20.0"
 scikit-criteria = "^0.7"
-miasm = "^0.1.3"
+
+tree-sitter-c = { path = "./third_party/tree-sitter-c", develop = true }
+tree-sitter-cpp = { path = "./third_party/tree-sitter-cpp", develop = true }
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
