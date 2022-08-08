@@ -9,11 +9,11 @@ import typing as t
 from os.path import dirname, abspath
 
 # Top level directory for project
-ROOT_DIR = dirname(dirname(abspath(__file__)))
+ROOT_DIR: str = dirname(dirname(abspath(__file__)))
 
 # Supported C/C++ source code extensions
 # TODO: we should do a very initial parse on the file to determine if it is C++ source
-SOURCE_FILE_EXTS = [".c", ".cpp", ".cc", ".cp" ".cxx", ".h", ".hpp", ".hh"]
+SOURCE_FILE_EXTS: t.List[str] = [".c", ".cpp", ".cc", ".cp" ".cxx", ".h", ".hpp", ".hh"]
 
 # Interesting symbol name patterns to check for fuzzable
 INTERESTING_PATTERNS: t.List[str] = [
@@ -44,5 +44,3 @@ RISKY_GLIBC_CALL_PATTERNS: t.List[str] = [
     "alloc",
     "create",
 ]
-
-SETTINGS = {}

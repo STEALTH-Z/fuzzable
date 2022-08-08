@@ -10,7 +10,7 @@ import typing as t
 from pathlib import Path
 from tree_sitter import Language, Node, Parser
 
-from . import AnalysisBackend, AnalysisMode, Fuzzability
+from . import AnalysisBackend, AnalysisMode, Fuzzability, DEFAULT_SCORE_WEIGHTS
 from ..metrics import CallScore
 from ..log import log
 from ..config import ROOT_DIR, SOURCE_FILE_EXTS
@@ -23,9 +23,13 @@ class AstAnalysis(AnalysisBackend):
     """Derived class to support parsing C/C++ ASTs with tree-sitter"""
 
     def __init__(
-        self, target: t.List[str], mode: AnalysisMode, basedir: t.Optional[Path] = None
+        self,
+        target: t.List[str],
+        mode: AnalysisMode,
+        score_weights: t.List[float] = DEFAULT_SCORE_WEIGHTS,
+        basedir: t.Optional[Path] = None,
     ):
-        super().__init__(target, mode)
+        super().__init__(target, mode, score_weights)
 
         log.debug("Building third-party tree-sitter libraries for C/C++ languages")
         Language.build_library(

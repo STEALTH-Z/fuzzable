@@ -8,6 +8,9 @@ binja.py
 """
 import os
 import typing as t
+import lief
+
+from pathlib import Path
 
 import binaryninja
 import binaryninja.log as log
@@ -20,10 +23,10 @@ from binaryninja.enums import LowLevelILOperation, SymbolType
 from binaryninja.plugin import BackgroundTaskThread
 from binaryninja.settings import Settings
 
-from . import AnalysisBackend, AnalysisMode, Fuzzability
+from .. import generate
+from . import AnalysisBackend, AnalysisMode, Fuzzability, DEFAULT_SCORE_WEIGHTS
 from ..metrics import CallScore
 from ..cli import COLUMNS, CSV_HEADER
-from ..generate import generate_harness
 
 
 class _BinjaAnalysisMeta(type(AnalysisBackend), type(BackgroundTaskThread)):
@@ -35,8 +38,14 @@ class BinjaAnalysis(
 ):
     """Derived class to support Binary Ninja, and can be dispatched as a task from the plugin."""
 
-    def __init__(self, target: BinaryView, mode: AnalysisMode, headless: bool = False):
-        AnalysisBackend.__init__(self, target, mode)
+    def __init__(
+        self,
+        target: BinaryView,
+        mode: AnalysisMode,
+        score_weights: t.List[float] = DEFAULT_SCORE_WEIGHTS,
+        headless: bool = False,
+    ):
+        AnalysisBackend.__init__(self, target, mode, score_weights)
         BackgroundTaskThread.__init__(
             self, "Finding fuzzable targets in current binary view"
         )
@@ -179,8 +188,9 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
             # Iterate over each argument and check for taint sinks
             for arg in func.parameter_vars:
-                if arg.type != "char*":
-                    continue
+
+                # if arg.type != "char*":
+                #    continue
 
                 arg_refs = func.get_hlil_var_refs(arg)
 
@@ -289,6 +299,13 @@ def run_export_csv(view: BinaryView) -> None:
 def run_export_json(view: BinaryView) -> None:
     """Generate a JSON report from a previous analysis"""
     log.log_info("Attempting to export results to JSON")
+    try:
+        json_output = view.query_metadata("json")
+    except KeyError:
+        interaction.show_message_box(
+            "Error", "Cannot export without running an analysis first."
+        )
+        return
 
     json_file = interaction.get_save_filename_input(
         "Filename to export as JSON?", "json"
@@ -297,7 +314,7 @@ def run_export_json(view: BinaryView) -> None:
 
     log.log_info(f"Writing to filepath {json_file}")
     with open(json_file, "w+", encoding="utf-8") as json_fd:
-        json_fd.write(csv_output)
+        json_fd.write(json_output)
 
     interaction.show_message_box("Success", f"Done, exported to {json_file}")
 
@@ -326,31 +343,32 @@ def run_export_md(view: BinaryView) -> None:
 def run_harness_generation(view, func: Function) -> None:
     """Experimental automatic fuzzer harness generation support"""
 
-    log.log_debug("Reading closed-source template from codebase")
-    target_name = os.path.basename(view.file.filename).split(".")[0]
+    log.log_debug("Grabbing closed-source template from project folder")
     template_file = os.path.join(
         binaryninja.user_plugin_path(),
         "fuzzable/templates/linux_closed_source_harness.cpp",
     )
-    with open(template_file, "r", encoding="utf-8") as harness:
-        template = harness.read()
 
-    params = [f"{param.type}" for param in func.parameter_vars.vars]
+    path = view.file.filename
+    binary = lief.parse(path)
 
-    log.log_debug("Generating harness from template")
-    template = template.replace("{NAME}", target_name)
-    template = template.replace("{path}", os.path.basename(view.file.filename))
-    template = template.replace("{function_name}", func.name)
-    template = template.replace("{return_type}", str(func.return_type))
-    template = template.replace("{type_args}", ", ".join(params))
+    symbol_name = func.name
+    params: t.List[str] = [f"{param.type}" for param in func.parameter_vars.vars]
+    return_type = str(func.return_type)
 
     log.log_debug("Getting filename to write to")
-    harness = f"{view.file.filename.split('.')[0]}_{func.name}_harness.cpp"
-    # harness = interaction.get_save_filename_input("Path to write to?", "cpp", default_name)
-    # harness = harness.decode("utf-8") + ".cpp"
+    harness = interaction.get_save_filename_input("Path to write to?", "cpp", "")
+    harness = harness + ".cpp"
 
-    log.log_info(f"Writing harness `{harness}` to workspace")
-    with open(harness, "w+", encoding="utf-8") as harness_fd:
-        harness_fd.write(template)
+    log.log_info("Generating harness from template")
+    shared_obj = generate.transform_elf_to_so(Path(path), binary, [symbol_name], None)
+    generate.generate_harness(
+        shared_obj,
+        symbol_name,
+        return_type=return_type,
+        params=params,
+        harness_path=template_file,
+        output=harness,
+    )
 
-    # interaction.show_message_box("Success", f"Done, wrote fuzzer harness to {harness}")
+    interaction.show_message_box("Success", f"Done, wrote fuzzer harness to {harness}")

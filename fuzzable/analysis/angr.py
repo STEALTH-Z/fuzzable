@@ -3,21 +3,28 @@ angr.py
 
     Fallback disassembly backend, most likely for headless analysis.
 """
+import typing as t
+
 import angr
 from angr.knowledge_plugins.functions.function import Function
 from angr.procedures.definitions.glibc import _libc_decls
 
 from pathlib import Path
 
-from . import AnalysisBackend, AnalysisMode, Fuzzability
+from . import AnalysisBackend, AnalysisMode, Fuzzability, DEFAULT_SCORE_WEIGHTS
 from ..metrics import CallScore
 from ..log import log
 
 # TODO: inherit angr.Analysis
 class AngrAnalysis(AnalysisBackend):
-    def __init__(self, target: Path, mode: AnalysisMode):
+    def __init__(
+        self,
+        target: Path,
+        mode: AnalysisMode,
+        score_weights: t.List[float] = DEFAULT_SCORE_WEIGHTS,
+    ):
         project = angr.Project(target, load_options={"auto_load_libs": False})
-        super().__init__(project, mode)
+        super().__init__(project, mode, score_weights)
 
         log.debug("Doing initial CFG analysis on target")
         self.cfg = self.target.analyses.CFGFast()

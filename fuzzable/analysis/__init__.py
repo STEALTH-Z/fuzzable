@@ -21,6 +21,9 @@ from ..config import INTERESTING_PATTERNS, RISKY_GLIBC_CALL_PATTERNS
 # Type sig for a finalized list
 Fuzzability = t.OrderedDict[str, CallScore]
 
+# Default weights for fuzzability
+DEFAULT_SCORE_WEIGHTS: t.List[float] = [0.3, 0.3, 0.05, 0.05, 0.3]
+
 
 class AnalysisException(Exception):
     """Raised when an analysis fails to succeed."""
@@ -40,7 +43,7 @@ class AnalysisBackend(abc.ABC):
         self,
         target: t.Any,
         mode: AnalysisMode,
-        score_weights: t.List[float] = [0.3, 0.3, 0.05, 0.05, 0.3],
+        score_weights: t.List[float] = DEFAULT_SCORE_WEIGHTS,
     ):
         self.target = target
         self.mode = mode

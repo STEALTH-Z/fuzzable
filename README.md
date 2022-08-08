@@ -147,7 +147,7 @@ Now that you have found your ideal candidates to fuzz, __fuzzable__ will also he
 
 ```
 # generate harness from a candidate
-$ fuzzable create-harness target some_unsafe_call
+$ fuzzable create-harness target --symbol-name=some_unsafe_call
 
 # make minimal and necessary modifications to the harness
 $ vim target_some_unsafe_call_harness.cpp

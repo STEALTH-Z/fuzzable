@@ -15,7 +15,7 @@ from rich import print
 from fuzzable import generate
 from fuzzable.config import SOURCE_FILE_EXTS
 from fuzzable.cli import print_table, error, export_results
-from fuzzable.analysis import AnalysisBackend, AnalysisMode
+from fuzzable.analysis import AnalysisBackend, AnalysisMode, DEFAULT_SCORE_WEIGHTS
 from fuzzable.analysis.ast import AstAnalysis
 from fuzzable.log import log
 
@@ -43,8 +43,8 @@ def analyze(
         False,
         help="If set, will also additionally output and/or export ignored symbols.",
     ),
-    score_weights: t.List[float] = typer.Option(
-        [0.3, 0.3, 0.05, 0.05, 0.3],
+    score_weights: t.Optional[str] = typer.Option(
+        None,
         help="Reconfigure the weights for MCDA when determining fuzzability.",
     ),
     debug: bool = typer.Option(
@@ -65,6 +65,17 @@ def analyze(
 
     if mode == AnalysisMode.RANK and list_ignored:
         error("--list_ignored is not needed for `rank`ing mode.")
+
+    if score_weights:
+        score_weights = [float(weight) for weight in score_weights.split(",")]
+        num_weights = len(DEFAULT_SCORE_WEIGHTS)
+        if len(score_weights) != num_weights:
+            error(f"--score-weights must contain {num_weights}")
+
+        if sum(score_weights) != 1.0:
+            error(f"--score-weights must sum up to 1.0")
+    else:
+        score_weights = DEFAULT_SCORE_WEIGHTS
 
     if export is not None:
         ext = export.suffix.lower()
@@ -104,7 +115,7 @@ def run_on_file(
             bv = BinaryViewType.get_view_of_file(target)
             bv.update_analysis_and_wait()
             analyzer = BinjaAnalysis(
-                bv, mode, headless=True, score_weight=score_weights
+                bv, mode, score_weights=score_weights, headless=True
             )
 
         # didn't work, try to load angr as a fallback instead
@@ -115,7 +126,7 @@ def run_on_file(
             try:
                 from fuzzable.analysis.angr import AngrAnalysis
 
-                analyzer = AngrAnalysis(target, mode)
+                analyzer = AngrAnalysis(target, mode, score_weights=score_weights)
             except ModuleNotFoundError as err:
                 error(f"Unsupported target {target}. Reason: {err}")
 
@@ -150,7 +161,7 @@ def run_on_workspace(
         )
 
     analyzer = AstAnalysis(
-        source_files, mode, basedir=target, score_weights=score_weights
+        source_files, mode, score_weights=score_weights, basedir=target
     )
     log.info(f"Running fuzzable analysis with the {str(analyzer)} analyzer")
     results = analyzer.run()
@@ -167,13 +178,14 @@ def create_harness(
         help="Names of function symbol to create a fuzzing harness to target. Source not supported yet.",
     ),
     out_so_name: t.Optional[str] = typer.Option(
-        None, help="Specify to set output `.so` path of a transformed ELF binary."
+        None,
+        help="Specify to set output `.so` path of a transformed ELF binary for binary targets.",
     ),
     out_harness: t.Optional[str] = typer.Option(
         None, help="Specify to set output harness template file path."
     ),
 ):
-    """Synthesize a AFL++/libFuzzer harness for a given symbol in a binary target (TODO: source)."""
+    """Synthesize a AFL++/libFuzzer harness for a given symbol in a target."""
     if not symbol_name:
         error("No --symbol_name specified.")
 
@@ -191,7 +203,3 @@ def create_harness(
 
     generate.generate_harness(shared_obj, symbol_name, harness_path=out_harness)
     log.info("Done!")
-
-
-# TODO generate-callgraph
-# TODO reference-cve

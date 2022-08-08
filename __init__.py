@@ -7,7 +7,7 @@ __init__.py
 from binaryninja.plugin import PluginCommand
 from binaryninja.settings import Settings
 
-from .fuzzable.analysis import binja
+from .fuzzable.analysis import binja, DEFAULT_SCORE_WEIGHTS
 
 Settings().register_group("fuzzable", "Fuzzable")
 Settings().register_setting(
@@ -16,8 +16,21 @@ Settings().register_setting(
     {
         "title"         : "List Ignored Symbols",
         "description"   : "Include the symbols that we've ignored using `recommend` mode.",
-        "type"          : "bool",
-        "default"       : "false"
+        "type"          : "boolean",
+        "default"       : false
+    }
+""",
+)
+
+Settings().register_setting(
+    "fuzzable.score_weights",
+    """
+    {
+        "title"         : "Override Score Weights",
+        "description"   : "Reset",
+        "type"          : "array",
+        "elementType"   : "string",
+        "default"       : [0.3, 0.3, 0.05, 0.05, 0.3]
     }
 """,
 )

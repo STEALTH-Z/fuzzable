@@ -15,7 +15,7 @@ from .log import log
 
 
 def generate_harness(
-    target_name: str,
+    target_path: str,
     function_name: str,
     return_type: t.Optional[str] = None,
     params: t.Optional[t.List[str]] = None,
@@ -25,6 +25,11 @@ def generate_harness(
     """
     Populate a harness template with given parameters and generate harness to path.
     """
+
+    abspath = os.path.basename(target_path)
+    name = abspath.split(".")[0]
+
+    # override template if set
     template_path = Path("templates") / "linux_closed_source_harness.cpp"
     if harness_path:
         template_path = harness_path
@@ -34,8 +39,8 @@ def generate_harness(
         template = template_file.read()
 
     log.debug("Replacing parameters in template")
-    name = os.path.basename(target_name).split(".")[0]
-    template = template.replace("{NAME}", os.path.basename(target_name))
+    template = template.replace("{NAME}", name)
+    template = template.replace("{path}", abspath)
     template = template.replace("{function_name}", function_name)
 
     # these are optional and can be populated by the user
@@ -43,8 +48,9 @@ def generate_harness(
         template = template.replace("{return_type}", return_type)
     if params:
         if len(params) != 0:
-            template = template.replace("{type_args}", params)
+            template = template.replace("{type_args}", ",".join(params))
 
+    # override harness output if set
     harness = f"{name}_{function_name}_harness.cpp"
     if output is not None:
         harness = output
