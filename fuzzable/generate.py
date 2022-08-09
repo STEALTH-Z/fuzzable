@@ -31,7 +31,7 @@ def generate_harness(
 
     # override template if set
     template_path = (
-        Path(os.path.dirname(abspath(__file__)))
+        Path(os.path.dirname(os.path.abspath(__file__)))
         / "templates"
         / "linux_closed_source_harness.cpp"
     )
