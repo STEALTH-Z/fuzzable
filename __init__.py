@@ -23,6 +23,19 @@ Settings().register_setting(
 )
 
 Settings().register_setting(
+    "fuzzable.skip_stripped",
+    """
+    {
+        "title"         : "Skip Stripped Symbols",
+        "description"   : "Ignore stripped symbols",
+        "type"          : "boolean",
+        "default"       : false
+    }
+""",
+)
+
+# TODO: DEFAULT_SCORE_WEIGHTS
+Settings().register_setting(
     "fuzzable.score_weights",
     """
     {
@@ -61,13 +74,13 @@ PluginCommand.register(
 )
 
 PluginCommand.register(
-    "Fuzzable\\Export Fuzzability Report\\ Markdown (.md)",
+    "Fuzzable\\Export Fuzzability Report\\Markdown (.md)",
     "Identify and generate targets for fuzzing",
     binja.run_export_md,
 )
 
 PluginCommand.register_for_function(
-    "Fuzzable\\Harness Generation\\Generate binary fuzzing harness (C/C++ ONLY)",
+    "Fuzzable\\Harness Generation\\Generate binary fuzzing harness (Linux ONLY at the moment)",
     "For a target function, generate a AFL-QEMU/libFuzzer C++ harness",
     binja.run_harness_generation,
 )

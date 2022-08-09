@@ -68,12 +68,14 @@ class BinjaAnalysis(
             # self.visited += [name]
 
             log.log_debug(f"Checking to see if we should ignore {name}")
-            if self.skip_analysis(func):
+            if self.mode == AnalysisMode.RECOMMEND and self.skip_analysis(func):
                 self.skipped[name] = str(hex(func.address_ranges[0].start))
                 continue
 
             # if recommend mode, filter and run only those that are top-level
+            log.log_debug(f"Checking to see if {name} is a top-level call")
             if self.mode == AnalysisMode.RECOMMEND and not self.is_toplevel_call(func):
+                self.skipped[name] = str(hex(func.address_ranges[0].start))
                 continue
 
             log.log_info(f"Starting analysis for function {name}")
@@ -184,6 +186,8 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
         risky_sinks = 0
 
+        visited = []
+
         # visit all other calls with depth-first search until we reach a risky sink
         callstack = [func]
         while callstack:
@@ -226,8 +230,10 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
                             risky_sinks += 1
 
                         # otherwise add to callstack and continue to trace arguments
-                        else:
+                        elif callee.name not in visited:
                             callstack += [callee]
+
+                        visited += [callee.name]
 
         return risky_sinks
 
@@ -250,6 +256,10 @@ __Top Fuzzing Contender:__ [{ranked[0].name}](binaryninja://?expr={ranked[0].nam
 
             # add all childs to callgraph, and add those we haven't recursed into callstack
             for child in func.callees:
+
+                # ignore recursive calls
+                if child.name == target.name:
+                    continue
 
                 # if address attempt to resolve call
                 if child.name not in self.visited:
