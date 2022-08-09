@@ -199,8 +199,11 @@ def create_harness(
 
     # resolve paths appropriately
     target = Path(target)
-    out_so_name = out_so_name.expanduser()
-    out_harness = out_harness.expanduser()
+    if out_so_name:
+        out_so_name = out_so_name.expanduser()
+
+    if out_harness:
+        out_harness = out_harness.expanduser()
 
     log.info(f"Running harness generation for `{target}` on symbol `{symbol_name}`.")
     shared_obj = generate.transform_elf_to_so(target, binary, symbol_name, out_so_name)
