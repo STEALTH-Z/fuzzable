@@ -12,7 +12,7 @@ from lief import ELF
 from pathlib import Path
 
 from .log import log
-from .config import ROOT_DIR
+from .config import get_project_root
 
 
 def generate_harness(
@@ -31,7 +31,7 @@ def generate_harness(
     name = abspath.split(".")[0]
 
     # override template if set
-    template_path = Path(ROOT_DIR) / "templates" / "linux_closed_source_harness.cpp"
+    template_path = get_project_root() / "templates" / "linux_closed_source_harness.cpp"
     if harness_path:
         template_path = harness_path
 

@@ -13,10 +13,10 @@ from tree_sitter import Language, Node, Parser
 from . import AnalysisBackend, AnalysisMode, Fuzzability, DEFAULT_SCORE_WEIGHTS
 from ..metrics import CallScore
 from ..log import log
-from ..config import ROOT_DIR, SOURCE_FILE_EXTS
+from ..config import get_project_root, SOURCE_FILE_EXTS
 
 # Compiled shared object for language support
-BUILD_PATH = os.path.join(ROOT_DIR, "build/lang.so")
+BUILD_PATH = os.path.join(get_project_root(), "build/lang.so")
 
 
 class AstAnalysis(AnalysisBackend):
@@ -35,8 +35,8 @@ class AstAnalysis(AnalysisBackend):
         Language.build_library(
             BUILD_PATH,
             [
-                os.path.join(ROOT_DIR, "third_party/tree-sitter-c"),
-                os.path.join(ROOT_DIR, "third_party/tree-sitter-cpp"),
+                os.path.join(get_project_root(), "third_party/tree-sitter-c"),
+                os.path.join(get_project_root(), "third_party/tree-sitter-cpp"),
             ],
         )
         self.language = Language(BUILD_PATH, "c")

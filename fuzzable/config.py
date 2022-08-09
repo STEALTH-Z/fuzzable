@@ -7,9 +7,12 @@ config.py
 import typing as t
 
 from os.path import dirname, abspath
+from pathlib import Path
 
 # Top level directory for project
-ROOT_DIR: str = dirname(dirname(abspath(__file__)))
+def get_project_root() -> Path:
+    return Path(__file__).parent.parent
+
 
 # Supported C/C++ source code extensions
 # TODO: we should do a very initial parse on the file to determine if it is C++ source
